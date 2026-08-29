@@ -25,12 +25,8 @@ public sealed class MessagingOptions
 
     public string VirtualHost { get; init; } = "/";
 
-    public string Exchange { get; init; } = "faceid.events";
-
     /// <summary>
-    /// Queue this instance listens on. Bound to the exchange, so a message
-    /// published here comes back to the consumer instead of leaving and
-    /// vanishing.
+    /// Exchanges and queues, one queue per kind of work.
     /// </summary>
-    public string Queue { get; init; } = "faceid.events.queue";
+    public MessagingTopologyOptions Topology { get; init; } = new();
 }
