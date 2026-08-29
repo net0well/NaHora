@@ -14,15 +14,21 @@ namespace FaceId.Features.Authentication.Login;
 /// <summary>
 /// Authenticates a CPF and password, and establishes a session.
 /// </summary>
+/// <remarks>
+/// The entry point reads as the four questions sign-in actually asks: is the
+/// company usable, are the credentials good, what session does that produce,
+/// and what is still outstanding. Each is answered by its own method, so a
+/// change to one does not force re-reading the others.
+/// </remarks>
 public static class LoginHandler
 {
     /// <summary>
     /// A well-formed Argon2id hash of a value nobody knows.
     /// </summary>
     /// <remarks>
-    /// Verified against when the CPF does not exist, so a missing account costs
-    /// the same time as a wrong password. Without it, response time alone would
-    /// tell an attacker which CPFs work at the company — the enumeration the
+    /// Verified against when the CPF matches no account, so a missing account
+    /// costs the same time as a wrong password. Without it, response time alone
+    /// would reveal which CPFs work at the company — the enumeration the
     /// identical error message exists to prevent.
     /// </remarks>
     private const string DummyHash =
@@ -45,74 +51,140 @@ public static class LoginHandler
 
         var now = clock.GetUtcNow();
 
-        var company = await companies.GetByIdAsync(command.CompanyId, cancellationToken);
-        if (company is null || !company.IsOperational)
+        var companyCheck = await EnsureCompanyIsOperationalAsync(companies, command.CompanyId, cancellationToken);
+        if (companyCheck.IsFailure)
         {
-            return Result.Failure<LoginResponse>(
-                company is null ? UserErrors.InvalidCredentials() : CompanyErrors.Suspended());
+            return Result.Failure<LoginResponse>(companyCheck.Errors);
         }
 
+        var authentication = await AuthenticateAsync(
+            command, users, passwordHasher, bus, unitOfWork, now, cancellationToken);
+
+        if (authentication.IsFailure)
+        {
+            return Result.Failure<LoginResponse>(authentication.Errors);
+        }
+
+        var user = authentication.Value;
+        var employee = await employees.GetByUserIdAsync(user.CompanyId, user.Id, cancellationToken);
+
+        var session = IssueSession(user, employee?.Id, tokenService, refreshTokens, now);
+
+        await bus.PublishAsync(new UserSignedIn(user.CompanyId, user.Id, user.Role.ToString(), now));
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Result.Success(BuildResponse(user, employee, session, now));
+    }
+
+    private static async Task<Result> EnsureCompanyIsOperationalAsync(
+        ICompanyRepository companies,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        var company = await companies.GetByIdAsync(companyId, cancellationToken);
+
+        // A company that does not exist is reported as bad credentials rather
+        // than "no such company": the latter would confirm which identifiers
+        // are real.
+        return company switch
+        {
+            null => Result.Failure(UserErrors.InvalidCredentials()),
+            { IsOperational: false } => Result.Failure(CompanyErrors.Suspended()),
+            _ => Result.Success()
+        };
+    }
+
+    /// <summary>
+    /// Resolves the credential and returns the user, recording the attempt
+    /// either way.
+    /// </summary>
+    private static async Task<Result<User>> AuthenticateAsync(
+        LoginCommand command,
+        IUserRepository users,
+        IPasswordHasher passwordHasher,
+        IMessageBus bus,
+        IUnitOfWork unitOfWork,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
         if (!Cpf.TryParse(command.Cpf, out var cpf))
         {
-            // Malformed CPF is reported as bad credentials, not as a validation
-            // error: distinguishing them would confirm which shapes exist.
+            // A malformed CPF is bad credentials rather than a validation
+            // error; separating them would confirm which shapes exist.
             passwordHasher.Verify(command.Password, DummyHash);
-            return Result.Failure<LoginResponse>(UserErrors.InvalidCredentials());
+            await bus.PublishAsync(new SignInFailed(command.CompanyId, null, command.IpAddress, now));
+
+            return Result.Failure<User>(UserErrors.InvalidCredentials());
         }
 
         var user = await users.GetByCpfAsync(command.CompanyId, cpf, cancellationToken);
         if (user is null)
         {
             passwordHasher.Verify(command.Password, DummyHash);
-
-            // Recorded with a null user: the audit trail may know the CPF
-            // matched nothing, the HTTP response may not.
             await bus.PublishAsync(new SignInFailed(command.CompanyId, null, command.IpAddress, now));
 
-            return Result.Failure<LoginResponse>(UserErrors.InvalidCredentials());
+            return Result.Failure<User>(UserErrors.InvalidCredentials());
         }
 
         if (user.IsLockedAt(now))
         {
-            // The one case that is told apart: a legitimate user needs to know
-            // how long to wait.
-            return Result.Failure<LoginResponse>(
-                UserErrors.AccountLocked(user.LockedUntil!.Value - now));
+            // The one case told apart: somebody legitimate needs to know how
+            // long to wait.
+            return Result.Failure<User>(UserErrors.AccountLocked(user.LockedUntil!.Value - now));
         }
 
         if (user.Status == UserStatus.Inactive || !passwordHasher.Verify(command.Password, user.PasswordHash))
         {
-            var lockDuration = user.RegisterFailedLogin(now);
+            await RecordFailedAttemptAsync(user, command.IpAddress, bus, unitOfWork, now, cancellationToken);
 
-            await bus.PublishAsync(new SignInFailed(user.CompanyId, user.Id, command.IpAddress, now));
-
-            if (lockDuration is not null)
-            {
-                await bus.PublishAsync(new AccountLocked(
-                    user.CompanyId,
-                    user.Id,
-                    user.FailedLoginAttempts,
-                    user.LockedUntil!.Value,
-                    now));
-            }
-
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return Result.Failure<LoginResponse>(UserErrors.InvalidCredentials());
+            return Result.Failure<User>(UserErrors.InvalidCredentials());
         }
 
         if (passwordHasher.NeedsRehash(user.PasswordHash))
         {
-            // Upgraded silently: the owner proved the password just now, so the
-            // stronger hash can be written without asking them for anything.
+            // Upgraded silently: the owner just proved the password, so the
+            // stronger hash is written without asking them for anything.
             user.UpgradePasswordHash(passwordHasher.Hash(command.Password));
         }
 
         user.RegisterSuccessfulLogin(now);
 
-        var employee = await employees.GetByUserIdAsync(user.CompanyId, user.Id, cancellationToken);
+        return Result.Success(user);
+    }
 
-        var accessToken = tokenService.IssueAccessToken(user, employee?.Id);
+    private static async Task RecordFailedAttemptAsync(
+        User user,
+        string? ipAddress,
+        IMessageBus bus,
+        IUnitOfWork unitOfWork,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var lockDuration = user.RegisterFailedLogin(now);
+
+        await bus.PublishAsync(new SignInFailed(user.CompanyId, user.Id, ipAddress, now));
+
+        if (lockDuration is not null)
+        {
+            await bus.PublishAsync(new AccountLocked(
+                user.CompanyId,
+                user.Id,
+                user.FailedLoginAttempts,
+                user.LockedUntil!.Value,
+                now));
+        }
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    private static IssuedSession IssueSession(
+        User user,
+        Guid? employeeId,
+        IAccessTokenService tokenService,
+        IRefreshTokenRepository refreshTokens,
+        DateTimeOffset now)
+    {
+        var accessToken = tokenService.IssueAccessToken(user, employeeId);
         var refreshToken = tokenService.IssueRefreshToken();
 
         refreshTokens.Add(RefreshToken.Issue(
@@ -122,22 +194,25 @@ public static class LoginHandler
             now,
             refreshToken.ExpiresAt));
 
-        await bus.PublishAsync(new UserSignedIn(user.CompanyId, user.Id, user.Role.ToString(), now));
+        return new IssuedSession(accessToken, refreshToken);
+    }
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return Result.Success(new LoginResponse(
-            accessToken.Token,
-            refreshToken.Token,
-            (int)(accessToken.ExpiresAt - now).TotalSeconds,
+    private static LoginResponse BuildResponse(
+        User user,
+        Employee? employee,
+        IssuedSession session,
+        DateTimeOffset now) =>
+        new(
+            session.AccessToken.Token,
+            session.RefreshToken.Token,
+            (int)(session.AccessToken.ExpiresAt - now).TotalSeconds,
             new AuthenticatedUserResponse(
                 user.Id,
                 user.FullName,
                 user.Role.ToString(),
                 employee?.Id,
                 RolePermissions.For(user.Role)),
-            ResolvePendingActions(user, employee)));
-    }
+            ResolvePendingActions(user, employee));
 
     private static List<string> ResolvePendingActions(User user, Employee? employee)
     {
@@ -148,8 +223,8 @@ public static class LoginHandler
             actions.Add(PendingAction.ChangePassword);
         }
 
-        // An employee has to enrol a face before they can punch. Someone
-        // without an employment record never punches, so it does not apply.
+        // An employee has to enrol a face before punching. Somebody without an
+        // employment record never punches, so it does not apply.
         if (employee is not null)
         {
             actions.Add(PendingAction.RegisterFaceProfile);
@@ -157,4 +232,8 @@ public static class LoginHandler
 
         return actions;
     }
+
+    private readonly record struct IssuedSession(
+        IssuedAccessToken AccessToken,
+        IssuedRefreshToken RefreshToken);
 }
