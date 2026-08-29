@@ -4,8 +4,10 @@ using FaceId.Domain.Companies;
 using FaceId.Domain.Employees;
 using FaceId.Domain.Errors;
 using FaceId.Domain.Users;
+using FaceId.Domain.Users.Events;
 using FaceId.Domain.ValueObjects;
 using FaceId.Shared.Results;
+using Wolverine;
 
 namespace FaceId.Features.Authentication.Login;
 
@@ -34,6 +36,7 @@ public static class LoginHandler
         IRefreshTokenRepository refreshTokens,
         IPasswordHasher passwordHasher,
         IAccessTokenService tokenService,
+        IMessageBus bus,
         IUnitOfWork unitOfWork,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -61,6 +64,11 @@ public static class LoginHandler
         if (user is null)
         {
             passwordHasher.Verify(command.Password, DummyHash);
+
+            // Recorded with a null user: the audit trail may know the CPF
+            // matched nothing, the HTTP response may not.
+            await bus.PublishAsync(new SignInFailed(command.CompanyId, null, command.IpAddress, now));
+
             return Result.Failure<LoginResponse>(UserErrors.InvalidCredentials());
         }
 
@@ -74,7 +82,20 @@ public static class LoginHandler
 
         if (user.Status == UserStatus.Inactive || !passwordHasher.Verify(command.Password, user.PasswordHash))
         {
-            user.RegisterFailedLogin(now);
+            var lockDuration = user.RegisterFailedLogin(now);
+
+            await bus.PublishAsync(new SignInFailed(user.CompanyId, user.Id, command.IpAddress, now));
+
+            if (lockDuration is not null)
+            {
+                await bus.PublishAsync(new AccountLocked(
+                    user.CompanyId,
+                    user.Id,
+                    user.FailedLoginAttempts,
+                    user.LockedUntil!.Value,
+                    now));
+            }
+
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Result.Failure<LoginResponse>(UserErrors.InvalidCredentials());
@@ -100,6 +121,8 @@ public static class LoginHandler
             refreshToken.TokenHash,
             now,
             refreshToken.ExpiresAt));
+
+        await bus.PublishAsync(new UserSignedIn(user.CompanyId, user.Id, user.Role.ToString(), now));
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -4,7 +4,9 @@ using FaceId.Domain.Companies;
 using FaceId.Domain.Employees;
 using FaceId.Domain.Errors;
 using FaceId.Domain.Users;
+using FaceId.Domain.Users.Events;
 using FaceId.Shared.Results;
+using Wolverine;
 
 namespace FaceId.Features.Authentication.RefreshSession;
 
@@ -21,6 +23,7 @@ public static class RefreshSessionHandler
         ICompanyRepository companies,
         IEmployeeRepository employees,
         IAccessTokenService tokenService,
+        IMessageBus bus,
         IUnitOfWork unitOfWork,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -47,7 +50,15 @@ public static class RefreshSessionHandler
         // the two cannot be told apart, so the whole chain goes.
         if (stored.IsRevoked)
         {
-            await refreshTokens.RevokeFamilyAsync(stored.FamilyId, now, cancellationToken);
+            var revoked = await refreshTokens.RevokeFamilyAsync(stored.FamilyId, now, cancellationToken);
+
+            await bus.PublishAsync(new RefreshTokenReuseDetected(
+                stored.CompanyId,
+                stored.UserId,
+                stored.FamilyId,
+                revoked,
+                now));
+
             await unitOfWork.SaveChangesAsync(cancellationToken);
 
             return Result.Failure<RefreshSessionResponse>(SessionErrors.RefreshTokenReused());
