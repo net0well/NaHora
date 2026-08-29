@@ -26,4 +26,15 @@ public static class RateLimitPolicies
 
     /// <summary>Export, which is both expensive and a way to extract personal data.</summary>
     public const string Export = "export";
+
+    /// <summary>
+    /// The live event stream, limited by concurrency rather than by rate.
+    /// </summary>
+    /// <remarks>
+    /// A subscription is one request that stays open, so counting requests per
+    /// minute measures nothing here — what is scarce is the connection itself.
+    /// Without a cap, a client that reconnects without closing the previous
+    /// stream holds a socket per attempt until the server runs out.
+    /// </remarks>
+    public const string EventStream = "event-stream";
 }

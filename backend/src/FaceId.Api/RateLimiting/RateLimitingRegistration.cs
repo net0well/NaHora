@@ -63,6 +63,22 @@ public static class RateLimitingRegistration
             AddFixedWindow(limiter, RateLimitPolicies.CompanyRegistration, options.CompanyRegistrationPerHour, TimeSpan.FromHours(1), ResolveIp);
             AddFixedWindow(limiter, RateLimitPolicies.CnpjLookup, options.CnpjLookupPerMinute, TimeSpan.FromMinutes(1), ResolveIp);
             AddFixedWindow(limiter, RateLimitPolicies.Export, options.ExportPerHour, TimeSpan.FromHours(1), ResolveUserOrIp);
+
+            // Concurrency, not rate: a subscription is one request that stays
+            // open for hours, so a per-minute window would never reject
+            // anything however many sockets the client was holding.
+            limiter.AddPolicy(RateLimitPolicies.EventStream, context =>
+                RateLimitPartition.GetConcurrencyLimiter(
+                    partitionKey: ResolveUserOrIp(context),
+                    factory: _ => new ConcurrencyLimiterOptions
+                    {
+                        PermitLimit = options.ConcurrentEventStreams,
+
+                        // Rejected outright. Queueing would hold the request
+                        // open waiting for a slot that frees only when another
+                        // stream ends, which may be hours away.
+                        QueueLimit = 0
+                    }));
         });
 
         return services;
