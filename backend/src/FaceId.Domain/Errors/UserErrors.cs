@@ -56,4 +56,24 @@ public static class UserErrors
     public static Error OnboardingIncomplete() => Error.Forbidden(
         "ONBOARDING_INCOMPLETE",
         "Complete your first access before continuing.");
+
+    public static Error PasswordTooShort(int minimumLength) => Error.Validation(
+        "WEAK_PASSWORD",
+        $"Password must be at least {minimumLength} characters long.",
+        "password");
+
+    public static Error PasswordTooSimple(int requiredClasses) => Error.Validation(
+        "WEAK_PASSWORD",
+        $"Password must combine at least {requiredClasses} of: lower case, upper case, digit, symbol.",
+        "password");
+
+    public static Error PasswordContainsPersonalData() => Error.Validation(
+        "WEAK_PASSWORD",
+        "Password must not contain your CPF, name or email address.",
+        "password");
+
+    public static Error CurrentPasswordInvalid() => Error.Validation(
+        "CURRENT_PASSWORD_INVALID",
+        "Current password is incorrect.",
+        "currentPassword");
 }
