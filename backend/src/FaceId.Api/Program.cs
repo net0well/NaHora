@@ -1,3 +1,4 @@
+using FaceId.Api.Authentication;
 using FaceId.Api.Diagnostics;
 using FaceId.Api.OpenApi;
 using FaceId.Features;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using Wolverine;
+using Wolverine.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,8 @@ builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+builder.Services.AddFaceIdAuthentication(builder.Configuration, builder.Environment);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -35,15 +39,31 @@ builder.Host.UseWolverine(options =>
 {
     options.Discovery.IncludeAssembly(typeof(FeaturesServiceRegistration).Assembly);
 
-    // Local-only for now. The RabbitMQ transport and the EF Core outbox are
-    // wired when the first integration event exists, not before.
-    options.Policies.AutoApplyTransactions();
+    // Teaches Wolverine about the DbContext. Without it the generated handler
+    // code cannot inline DbContextOptions, which AddDbContext registers as an
+    // opaque factory, and the runtime rejects the resulting service location.
+    //
+    // It is also what the transactional outbox will build on: an integration
+    // event must be published only if the transaction that produced it
+    // committed.
+    options.UseEntityFrameworkCoreTransactions();
+
+    // AutoApplyTransactions is deliberately absent: it enlists handlers in
+    // Wolverine's durable envelope storage, which only exists once the outbox
+    // is configured. Nothing is published yet, so handlers commit through
+    // IUnitOfWork explicitly — which is also easier to follow than an
+    // implicit transaction the reader has to know about.
 });
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
+
+// Order matters: authentication populates the principal that authorisation and
+// the tenant filter both read.
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
