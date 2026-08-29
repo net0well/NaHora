@@ -205,6 +205,24 @@ jobs:
     timeout-minutes: 20
     needs: [backend]
 
+    # The image needs a real database to start: Wolverine opens its message
+    # store during boot, so a smoke test without one only proves the image
+    # was built, not that it runs.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: faceid
+          POSTGRES_USER: faceid
+          POSTGRES_PASSWORD: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v7
 
@@ -228,13 +246,13 @@ jobs:
           # Throwaway values: the container only has to boot and answer its
           # liveness probe. The signing key is deliberately not the example
           # value, so the guard that rejects that one stays meaningful.
-          docker run --detach --name faceid-api-smoke \
+          docker run --detach --name faceid-api-smoke --network host \
             --env Database__ConnectionString="Host=localhost;Database=faceid;Username=faceid;Password=ci" \
+            --env Database__AutoMigrate="false" \
             --env Storage__Endpoint="localhost:9000" \
             --env Storage__AccessKey="ci" \
             --env Storage__SecretKey="ci" \
             --env Jwt__SigningKey="ci-smoke-test-only-signing-key-32-bytes-min" \
-            --publish 8080:8080 \
             faceid-api:ci
 
           for attempt in $(seq 1 30); do

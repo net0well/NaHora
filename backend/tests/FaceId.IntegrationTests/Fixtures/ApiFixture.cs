@@ -2,6 +2,7 @@ using FaceId.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -61,6 +62,25 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
     {
         await _postgres.StartAsync();
 
+        // Set before the host exists, and deliberately not through
+        // ConfigureAppConfiguration: Program reads the connection string while
+        // the host is still being built, so a configuration source added by the
+        // factory arrives too late. Environment variables are read by
+        // CreateBuilder itself, which is early enough.
+        //
+        // Overriding the DbContext registration alone was never enough —
+        // Wolverine's message store opens its own connection from
+        // configuration, and on a build agent that pointed at nothing.
+        Environment.SetEnvironmentVariable("Database__ConnectionString", _postgres.GetConnectionString());
+
+        // No broker on an agent. The outbox still runs and keeps its
+        // transactional guarantee; only the transport is dropped.
+        Environment.SetEnvironmentVariable("Messaging__Enabled", "false");
+
+        // Nothing collects OTLP here, and an exporter retrying into nothing
+        // would only slow the suite down.
+        Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", null);
+
         using var scope = Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<FaceIdDbContext>();
         await dbContext.Database.EnsureCreatedAsync();
@@ -68,6 +88,9 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
     public override async ValueTask DisposeAsync()
     {
+        Environment.SetEnvironmentVariable("Database__ConnectionString", null);
+        Environment.SetEnvironmentVariable("Messaging__Enabled", null);
+
         await _postgres.DisposeAsync();
         await base.DisposeAsync();
     }
