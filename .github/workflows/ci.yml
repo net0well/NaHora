@@ -75,7 +75,7 @@ jobs:
         run: dotnet test --project tests/FaceId.IntegrationTests/FaceId.IntegrationTests.csproj --configuration Release --no-build
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-test-results
@@ -123,7 +123,7 @@ jobs:
         run: flutter build windows --release
 
       - name: Upload Windows build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: faceid-windows
           path: frontend/faceid/build/windows/x64/runner/Release/
