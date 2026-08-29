@@ -100,6 +100,50 @@ Cada classe, record, interface, enum ou struct vive no seu próprio arquivo,
 nomeado como o tipo. Enums não moram dentro da entidade que os usa. Arquivos são
 organizados por feature, não por categoria técnica.
 
+### Design Patterns explícitos no nome
+
+Quando um tipo **é** um pattern, o nome diz qual. Quem abre o arquivo não
+precisa deduzir pela forma:
+
+| Pattern | Sufixo | Exemplo no projeto |
+|---------|--------|--------------------|
+| Repository | `Repository` | `UserRepository` |
+| Factory | `Factory` | `FaceIdDbContextFactory` |
+| Strategy | `Strategy` | — |
+| Adapter | `Adapter` | — (ver exceção abaixo) |
+| Decorator | `Decorator` | — |
+| Builder | `Builder` | — |
+| Facade | `Facade` | — |
+| Policy | `Policy` | `PasswordPolicy`, `SensitiveDataPolicy` |
+| Handler | `Handler` | `LoginHandler` |
+| Middleware | `Middleware` | `CorrelationIdMiddleware` |
+
+**Duas exceções, e só estas duas.**
+
+**Factory method estático em entidade** não vira `XFactory`. O nome é a ação do
+domínio, que carrega mais informação que o nome do padrão:
+
+```csharp
+Employee.Hire(...)      // não EmployeeFactory.Create
+Company.Register(...)   // não CompanyFactory.Create
+Cpf.Create(...)         // aqui Create é a própria ação
+```
+
+**Adaptador de porta** é nomeado pela tecnologia que adapta, não por `Adapter`.
+`Argon2PasswordHasher` diz o que muda ao trocar a implementação;
+`PasswordHasherAdapter` não diria nada:
+
+```csharp
+Argon2PasswordHasher          : IPasswordHasher
+JwtAccessTokenService         : IAccessTokenService
+BrasilApiCompanyRegistryLookup: ICompanyRegistryLookup
+```
+
+E a regra que vale mais que a lista: **não usar um pattern para demonstrar que
+o conhece**. Se um `Strategy` tem uma implementação só, é uma interface a mais e
+uma indireção a menos de clareza. O sufixo só entra quando o padrão está mesmo
+lá.
+
 ### Aggregate root explícito na declaração
 
 A distinção fica visível na assinatura da classe, sem precisar abrir mais nada:
@@ -213,6 +257,10 @@ Clean Code · SOLID · alta coesão · baixo acoplamento · DI · responsabilida
 **Sem complexidade artificial.** Não criar interface, factory ou padrão sem
 necessidade real. Abstração para uma única implementação precisa de justificativa
 concreta. Proibidos `GenericRepository`, `GenericService`, `BaseHandler` genérico.
+
+**Método faz uma coisa.** Acima de ~40 linhas, quase sempre há mais de uma
+responsabilidade ali dentro. Composições raiz (`AddXServices`) e mapeamentos
+declarativos do EF são exceção legítima — são listas, não lógica.
 
 Async correto: nunca `.Result`, `.Wait()` ou `.GetAwaiter().GetResult()`.
 `CancellationToken` propagado em toda operação assíncrona.
