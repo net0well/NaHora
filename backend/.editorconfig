@@ -54,3 +54,15 @@ dotnet_diagnostic.CA2007.severity = none
 # Metodos de teste sao descritivos e nao seguem convencao de nomenclatura de API
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1861.severity = none
+
+# ---------------------------------------------------------------------------
+# Migrations do EF Core sao codigo gerado pela ferramenta. Editar o arquivo a
+# mao para satisfazer um analisador o dessincronizaria do snapshot do modelo, e
+# afrouxar a regra no projeto inteiro custaria a verificacao no codigo escrito
+# por nos. Marcar como gerado e a afirmacao correta do que esses arquivos sao.
+# ---------------------------------------------------------------------------
+[**/Persistence/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.IDE0161.severity = none
+dotnet_diagnostic.CA1861.severity = none
