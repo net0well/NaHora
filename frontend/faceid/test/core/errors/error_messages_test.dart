@@ -42,7 +42,13 @@ void main() {
 
     test('Given any mapped code, When resolved, Then no message exposes a biometric score', () {
       // Arrange
-      const forbidden = ['score', 'similarity', 'liveness', 'threshold', 'embedding'];
+      const forbidden = [
+        'score',
+        'similarity',
+        'liveness',
+        'threshold',
+        'embedding',
+      ];
 
       // Act & Assert — a message that reveals the score teaches an attacker
       // what to tune. The user is told what to do, never what was measured.

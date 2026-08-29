@@ -7,7 +7,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// SharedPreferences: it is a plaintext XML file that any process running as the
 /// user can read (OWASP Mobile M9).
 abstract interface class TokenStorage {
-  Future<void> saveTokens({required String accessToken, required String refreshToken});
+  Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+  });
 
   Future<String?> readAccessToken();
 
@@ -18,15 +21,16 @@ abstract interface class TokenStorage {
 
 class SecureTokenStorage implements TokenStorage {
   SecureTokenStorage({FlutterSecureStorage? storage})
-      : _storage = storage ??
-            const FlutterSecureStorage(
-              // Android encrypts by default from v10 onwards. iOS is pinned to
-              // this-device-only so a restored backup cannot carry a live
-              // session onto another handset.
-              iOptions: IOSOptions(
-                accessibility: KeychainAccessibility.first_unlock_this_device,
-              ),
-            );
+    : _storage =
+          storage ??
+          const FlutterSecureStorage(
+            // Android encrypts by default from v10 onwards. iOS is pinned to
+            // this-device-only so a restored backup cannot carry a live
+            // session onto another handset.
+            iOptions: IOSOptions(
+              accessibility: KeychainAccessibility.first_unlock_this_device,
+            ),
+          );
 
   static const String _accessTokenKey = 'faceid.access_token';
   static const String _refreshTokenKey = 'faceid.refresh_token';
@@ -34,7 +38,10 @@ class SecureTokenStorage implements TokenStorage {
   final FlutterSecureStorage _storage;
 
   @override
-  Future<void> saveTokens({required String accessToken, required String refreshToken}) async {
+  Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
     await _storage.write(key: _accessTokenKey, value: accessToken);
     await _storage.write(key: _refreshTokenKey, value: refreshToken);
   }

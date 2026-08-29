@@ -16,13 +16,13 @@ abstract final class AppRoutes {
 /// scattered across widgets.
 abstract final class AppRouter {
   static GoRouter create() => GoRouter(
-        initialLocation: AppRoutes.home,
-        routes: [
-          GoRoute(
-            path: AppRoutes.home,
-            name: 'home',
-            builder: (context, state) => const HomeScreen(),
-          ),
-        ],
-      );
+    initialLocation: AppRoutes.home,
+    routes: [
+      GoRoute(
+        path: AppRoutes.home,
+        name: 'home',
+        builder: (context, state) => const HomeScreen(),
+      ),
+    ],
+  );
 }

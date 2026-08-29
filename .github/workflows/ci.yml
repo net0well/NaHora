@@ -1,0 +1,266 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# A new push supersedes the previous run on the same ref. Without this, a branch
+# with rapid pushes queues runs that are already irrelevant.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege by default. Jobs that need more raise it themselves.
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  FLUTTER_VERSION: '3.47.2'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Backend: build, style, and the three test suites.
+  # Integration tests use Testcontainers, which needs the Docker daemon the
+  # ubuntu runner already provides.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore FaceId.slnx
+
+      # TreatWarningsAsErrors is on in Directory.Build.props: a warning fails
+      # here rather than accumulating until nobody reads them.
+      - name: Build
+        run: dotnet build FaceId.slnx --configuration Release --no-restore
+
+      - name: Verify formatting
+        run: dotnet format FaceId.slnx --verify-no-changes --no-restore --severity warn
+
+      - name: Unit tests
+        run: dotnet test --project tests/FaceId.UnitTests/FaceId.UnitTests.csproj --configuration Release --no-build
+
+      # Guards dependency direction, slice isolation and the commercial-licence
+      # ban. A violation here is an architecture regression, not a style nit.
+      - name: Architecture tests
+        run: dotnet test --project tests/FaceId.ArchitectureTests/FaceId.ArchitectureTests.csproj --configuration Release --no-build
+
+      - name: Integration tests
+        run: dotnet test --project tests/FaceId.IntegrationTests/FaceId.IntegrationTests.csproj --configuration Release --no-build
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-test-results
+          path: backend/**/TestResults/**
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------
+  # Frontend: analyze, test, and produce the Windows build.
+  # Runs on windows-latest because the desktop target cannot cross-compile.
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Frontend
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: frontend/faceid
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      # Infos and warnings are fatal: a lint that is merely reported is a lint
+      # that gets ignored.
+      - name: Analyze
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Test
+        run: flutter test --reporter github
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v7
+        with:
+          name: faceid-windows
+          path: frontend/faceid/build/windows/x64/runner/Release/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Security. This project stores biometric data, which cannot be rotated after
+  # a leak the way a password can — the bar here is higher than usual.
+  # ---------------------------------------------------------------------------
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Gitleaks needs history to scan commits, not just the tree.
+          fetch-depth: 0
+
+      # The official action posts PR comments, which requires
+      # pull-requests:write. Running the binary performs the same scan under
+      # contents:read alone — a scanner has no business writing to the repo.
+      - name: Scan for committed secrets
+        env:
+          GITLEAKS_VERSION: '8.24.3'
+        run: |
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl --silent --show-error --location "$url" | tar --extract --gzip --directory /tmp gitleaks
+          # --redact keeps any finding out of the build log, which is itself
+          # readable by anyone with access to the run.
+          /tmp/gitleaks detect --source . --no-banner --redact --exit-code 1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        working-directory: backend
+        run: dotnet restore FaceId.slnx
+
+      - name: Audit NuGet dependencies
+        working-directory: backend
+        run: |
+          dotnet list FaceId.slnx package --vulnerable --include-transitive 2>&1 | tee audit.txt
+          if grep --quiet "has the following vulnerable packages" audit.txt; then
+            echo "::error::Vulnerable NuGet packages found"
+            exit 1
+          fi
+
+      - name: Audit Flutter dependencies
+        working-directory: frontend/faceid
+        run: |
+          if grep --quiet --extended-regexp "^\s+[a-z_]+:\s*any\s*$" pubspec.yaml; then
+            echo "::error::Unconstrained ('any') dependency version in pubspec.yaml"
+            exit 1
+          fi
+
+      # These files must never reach the repository. The .gitignore is the first
+      # barrier; this is the one that fails the build if the first is bypassed.
+      - name: Verify no secrets or restricted assets are tracked
+        run: |
+          tracked=$(git ls-files | grep --extended-regexp '\.(pfx|p12|pem|key|onnx)$|(^|/)\.env$|FaceIdSpecs/' || true)
+          if [ -n "$tracked" ]; then
+            echo "::error::Restricted files are tracked by git:"
+            echo "$tracked"
+            exit 1
+          fi
+          echo "No certificates, keys, models, env files or specs are tracked."
+
+  # ---------------------------------------------------------------------------
+  # Container image. Built on every run to catch a broken Dockerfile at review
+  # time; pushed only from the default branch.
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Container image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [backend]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/api/Dockerfile
+          push: false
+          load: true
+          tags: faceid-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # A container that builds but cannot start is not a passing build.
+      - name: Verify the image starts
+        run: |
+          docker run --detach --name faceid-api-smoke \
+            --env Database__ConnectionString="Host=localhost;Database=faceid;Username=faceid;Password=ci" \
+            --env Storage__Endpoint="localhost:9000" \
+            --env Storage__AccessKey="ci" \
+            --env Storage__SecretKey="ci" \
+            --publish 8080:8080 \
+            faceid-api:ci
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:8080/health/live > /dev/null; then
+              echo "Container is live after ${attempt}s"
+              docker rm --force faceid-api-smoke > /dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "::error::Container did not become live within 30s"
+          docker logs faceid-api-smoke
+          docker rm --force faceid-api-smoke > /dev/null
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  # Single required check for branch protection: one status to gate on instead
+  # of a list that has to be updated whenever a job is added.
+  # ---------------------------------------------------------------------------
+  ci-passed:
+    name: CI passed
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, security, docker]
+    if: always()
+    steps:
+      - name: Verify every job succeeded
+        run: |
+          if echo '${{ toJSON(needs) }}' | grep --quiet --extended-regexp '"result": *"(failure|cancelled)"'; then
+            echo "::error::At least one CI job did not succeed"
+            exit 1
+          fi
+          echo "All CI jobs succeeded."

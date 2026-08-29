@@ -35,48 +35,51 @@ class AppButton extends StatelessWidget {
 
     final button = switch (variant) {
       AppButtonVariant.primary => FilledButton(
-          onPressed: _isEnabled ? onPressed : null,
-          style: _style(AppColors.primary, AppColors.surface),
-          child: child,
-        ),
+        onPressed: _isEnabled ? onPressed : null,
+        style: _style(AppColors.primary, AppColors.surface),
+        child: child,
+      ),
       AppButtonVariant.secondary => OutlinedButton(
-          onPressed: _isEnabled ? onPressed : null,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            minimumSize: const Size(0, AppSizing.buttonHeight),
-            side: const BorderSide(color: AppColors.primary),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            textStyle: AppTypography.labelLarge,
+        onPressed: _isEnabled ? onPressed : null,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          minimumSize: const Size(0, AppSizing.buttonHeight),
+          side: const BorderSide(color: AppColors.primary),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
-          child: child,
+          textStyle: AppTypography.labelLarge,
         ),
+        child: child,
+      ),
       AppButtonVariant.danger => FilledButton(
-          onPressed: _isEnabled ? onPressed : null,
-          style: _style(AppColors.danger, AppColors.surface),
-          child: child,
-        ),
+        onPressed: _isEnabled ? onPressed : null,
+        style: _style(AppColors.danger, AppColors.surface),
+        child: child,
+      ),
       AppButtonVariant.text => TextButton(
-          onPressed: _isEnabled ? onPressed : null,
-          style: TextButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            minimumSize: const Size(0, AppSizing.minTapTarget),
-            textStyle: AppTypography.labelLarge,
-          ),
-          child: child,
+        onPressed: _isEnabled ? onPressed : null,
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          minimumSize: const Size(0, AppSizing.minTapTarget),
+          textStyle: AppTypography.labelLarge,
         ),
+        child: child,
+      ),
     };
 
     return Semantics(
       button: true,
       enabled: _isEnabled,
       label: label,
-      child: expanded ? SizedBox(width: double.infinity, child: button) : button,
+      child: expanded
+          ? SizedBox(width: double.infinity, child: button)
+          : button,
     );
   }
 
-  ButtonStyle _style(Color background, Color foreground) => FilledButton.styleFrom(
+  ButtonStyle _style(Color background, Color foreground) =>
+      FilledButton.styleFrom(
         backgroundColor: background,
         foregroundColor: foreground,
         minimumSize: const Size(0, AppSizing.buttonHeight),
