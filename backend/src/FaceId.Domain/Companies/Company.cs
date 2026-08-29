@@ -9,7 +9,7 @@ namespace FaceId.Domain.Companies;
 /// Tenant root. Every business entity belongs to exactly one company.
 /// </summary>
 [Audit]
-public sealed class Company : Entity
+public sealed class Company : AggregateRoot
 {
     public const string DefaultTimeZoneId = "America/Sao_Paulo";
 
