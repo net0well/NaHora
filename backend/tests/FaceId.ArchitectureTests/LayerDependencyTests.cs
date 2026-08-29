@@ -48,6 +48,25 @@ public sealed class LayerDependencyTests
     }
 
     [Fact]
+    public void Features_DoesNotReference_Infrastructure()
+    {
+        // Arrange — a slice reaching for a concrete adapter, or for its options
+        // type, inverts the dependency direction and makes the handler
+        // untestable without the real implementation.
+        var featuresAssembly = typeof(Features.FeaturesServiceRegistration).Assembly;
+
+        // Act
+        var referenced = featuresAssembly.GetReferencedAssemblies()
+            .Select(name => name.Name!)
+            .ToArray();
+
+        // Assert
+        referenced.ShouldNotContain(
+            "FaceId.Infrastructure",
+            "slices depend on ports declared in Domain, never on the adapters that implement them");
+    }
+
+    [Fact]
     public void Shared_DependsOnNoOtherProject()
     {
         // Arrange & Act

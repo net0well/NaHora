@@ -43,6 +43,20 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
         });
     }
 
+    /// <summary>
+    /// Runs work inside a scope with the application's own services, so a test
+    /// seeds through the real DbContext and the real password hasher rather
+    /// than a parallel construction that could drift from production.
+    /// </summary>
+    public async Task<TResult> WithScopeAsync<TResult>(Func<IServiceProvider, Task<TResult>> work)
+    {
+        ArgumentNullException.ThrowIfNull(work);
+
+        using var scope = Services.CreateScope();
+
+        return await work(scope.ServiceProvider);
+    }
+
     public async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
