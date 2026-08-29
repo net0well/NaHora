@@ -1,0 +1,106 @@
+# ---------------------------------------------------------------------------
+# Especificações — nunca versionadas
+# As specs vivem em ../FaceIdSpecs, fora deste repositório. As entradas abaixo
+# são uma segunda barreira contra cópia acidental para dentro do repo.
+# ---------------------------------------------------------------------------
+FaceIdSpecs/
+/FaceIdSpecs/
+docs/specs/
+*-spec.md
+*.spec.md
+
+# ---------------------------------------------------------------------------
+# Segredos e material criptográfico
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+certs/*
+!certs/.gitkeep
+*.pfx
+*.p12
+*.key
+*.pem
+*.crt
+*.cer
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+
+# ---------------------------------------------------------------------------
+# Modelos ONNX — binários grandes, com licença própria (ver models/README.md)
+# ---------------------------------------------------------------------------
+models/*
+!models/README.md
+!models/.gitkeep
+*.onnx
+
+# ---------------------------------------------------------------------------
+# Artefatos gerados em runtime
+# ---------------------------------------------------------------------------
+*.afd
+*.p7s
+*.aej
+exports/
+evidence/
+
+# ---------------------------------------------------------------------------
+# .NET
+# ---------------------------------------------------------------------------
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+*.userprefs
+*.cache
+.vs/
+.vscode/
+!.vscode/extensions.json
+*.dbmdl
+*.received.*
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+BenchmarkDotNet.Artifacts/
+
+# ---------------------------------------------------------------------------
+# Flutter / Dart
+# ---------------------------------------------------------------------------
+frontend/faceid/build/
+frontend/faceid/.dart_tool/
+frontend/faceid/.flutter-plugins
+frontend/faceid/.flutter-plugins-dependencies
+frontend/faceid/.packages
+frontend/faceid/.pub-cache/
+frontend/faceid/.pub/
+frontend/faceid/windows/flutter/ephemeral/
+frontend/faceid/android/.gradle/
+frontend/faceid/ios/Pods/
+*.iml
+.idea/
+
+# ---------------------------------------------------------------------------
+# Dataset biométrico de teste — dado pessoal sensível, nunca versionado
+# ---------------------------------------------------------------------------
+tests/**/dataset/
+biometric-dataset/
+*.jpg
+*.jpeg
+*.png
+!frontend/faceid/assets/**/*.png
+!docs/**/*.png
+
+# ---------------------------------------------------------------------------
+# Sistema operacional
+# ---------------------------------------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp
+*.log
+owasp_*_scan.json

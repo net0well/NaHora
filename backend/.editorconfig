@@ -1,0 +1,50 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,xml,csproj,props,targets,slnx}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+# --- Estilo de linguagem ---
+csharp_style_namespace_declarations = file_scoped:error
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_prefer_braces = true:error
+csharp_style_prefer_primary_constructors = true:suggestion
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:error
+dotnet_style_readonly_field = true:warning
+
+# --- Ordenacao de usings ---
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# --- Analisadores: excecoes justificadas ---
+
+# CA1716: "Shared" e palavra reservada em Visual Basic. O projeto e uma
+# biblioteca interna que nunca sera consumida de VB, e o nome faz parte da
+# arquitetura acordada. Renomear para satisfazer interop com uma linguagem que
+# nao usamos seria cerimonia sem beneficio.
+dotnet_diagnostic.CA1716.severity = none
+
+# CA1848: LoggerMessage source-generated e uma otimizacao de caminho quente.
+# Aplicar em todo log antes de medir e ruido; sera reavaliado por medicao.
+dotnet_diagnostic.CA1848.severity = none
+
+# CA2007: ConfigureAwait(false) nao se aplica a ASP.NET Core, que nao tem
+# SynchronizationContext. Exigi-lo em todo await polui o codigo sem efeito.
+dotnet_diagnostic.CA2007.severity = none
+
+[tests/**/*.cs]
+# Metodos de teste sao descritivos e nao seguem convencao de nomenclatura de API
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1861.severity = none

@@ -1,0 +1,102 @@
+name: faceid
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: faceid-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Brazilian collation so ORDER BY on names sorts accents correctly.
+      LANG: pt_BR.utf8
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - faceid-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  minio:
+    image: minio/minio:latest
+    container_name: faceid-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - faceid-minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Runs once to create the buckets, then exits. Buckets stay private: objects
+  # are only ever reachable through a pre-signed URL issued by the backend.
+  minio-init:
+    image: minio/mc:latest
+    container_name: faceid-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing local/faceid-security-evidence &&
+      mc mb --ignore-existing local/faceid-exports &&
+      mc mb --ignore-existing local/faceid-compliance &&
+      mc version enable local/faceid-compliance &&
+      mc version enable local/faceid-security-evidence &&
+      mc ilm rule add --expire-days 7 local/faceid-exports || true &&
+      echo 'buckets ready'
+      "
+    restart: "no"
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    container_name: faceid-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - faceid-rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  # Captures outbound mail in development. Nothing ever leaves the machine, so a
+  # mistyped address in a test cannot reach a real person.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: faceid-mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  faceid-postgres-data:
+  faceid-minio-data:
+  faceid-rabbitmq-data:

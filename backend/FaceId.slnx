@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FaceId.Api/FaceId.Api.csproj" />
+    <Project Path="src/FaceId.Domain/FaceId.Domain.csproj" />
+    <Project Path="src/FaceId.Features/FaceId.Features.csproj" />
+    <Project Path="src/FaceId.Infrastructure/FaceId.Infrastructure.csproj" />
+    <Project Path="src/FaceId.Shared/FaceId.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FaceId.UnitTests/FaceId.UnitTests.csproj" />
+    <Project Path="tests/FaceId.IntegrationTests/FaceId.IntegrationTests.csproj" />
+    <Project Path="tests/FaceId.ArchitectureTests/FaceId.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

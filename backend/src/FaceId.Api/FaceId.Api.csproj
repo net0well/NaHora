@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="WolverineFX.Http" />
+    <PackageReference Include="WolverineFx.RuntimeCompilation" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FaceId.Domain\FaceId.Domain.csproj" />
+    <ProjectReference Include="..\FaceId.Features\FaceId.Features.csproj" />
+    <ProjectReference Include="..\FaceId.Infrastructure\FaceId.Infrastructure.csproj" />
+    <ProjectReference Include="..\FaceId.Shared\FaceId.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
