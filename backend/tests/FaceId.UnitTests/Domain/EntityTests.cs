@@ -1,4 +1,4 @@
-using FaceId.Domain.Abstractions;
+using FaceId.UnitTests.Domain.Fakes;
 
 namespace FaceId.UnitTests.Domain;
 
@@ -74,19 +74,5 @@ public sealed class EntityTests
         var rightBytes = right.ToByteArray(bigEndian: true);
 
         return leftBytes.AsSpan().SequenceCompareTo(rightBytes.AsSpan());
-    }
-
-    private sealed class SampleEntity : Entity
-    {
-        public SampleEntity()
-        {
-        }
-
-        public SampleEntity(Guid id) => Id = id;
-    }
-
-    private sealed class OtherEntity : Entity
-    {
-        public OtherEntity(Guid id) => Id = id;
     }
 }
