@@ -25,6 +25,8 @@
     <PackageVersion Include="WolverineFX" Version="6.30.3" />
     <PackageVersion Include="WolverineFX.Http" Version="6.30.3" />
     <PackageVersion Include="WolverineFx.EntityFrameworkCore" Version="6.30.3" />
+    <PackageVersion Include="WolverineFx.RabbitMQ" Version="6.30.3" />
+    <PackageVersion Include="WolverineFx.Postgresql" Version="6.30.3" />
     <PackageVersion Include="WolverineFx.RuntimeCompilation" Version="6.30.3" />
   </ItemGroup>
 
@@ -52,6 +54,18 @@
 
   <ItemGroup Label="Observability">
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0" />
+    <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.13.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Resilience">
+    <!-- Wraps Polly v8 and plugs into IHttpClientFactory. MIT. -->
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
