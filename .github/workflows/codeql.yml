@@ -22,6 +22,19 @@ jobs:
     name: Analyze C#
     runs-on: ubuntu-latest
     timeout-minutes: 25
+
+    # CodeQL publishes its findings to code scanning, which on a private
+    # repository requires GitHub Advanced Security — a paid add-on. Without it
+    # the upload fails with "Code scanning is not enabled for this repository"
+    # no matter how clean the code is, so the job would be permanently red for
+    # a reason that has nothing to do with the code.
+    #
+    # The guard skips instead of failing, and the analysis starts running on
+    # its own the moment the repository becomes public or Advanced Security is
+    # enabled. Meanwhile the Security job in ci.yml still runs secret scanning
+    # and the dependency audit, both of which work on a private repository.
+    if: github.event.repository.private == false
+
     permissions:
       security-events: write
       actions: read
