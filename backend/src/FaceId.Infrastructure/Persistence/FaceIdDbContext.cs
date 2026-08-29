@@ -4,6 +4,7 @@ using FaceId.Domain.Companies;
 using FaceId.Domain.Employees;
 using FaceId.Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using Wolverine.EntityFrameworkCore;
 
 namespace FaceId.Infrastructure.Persistence;
 
@@ -40,6 +41,11 @@ public sealed class FaceIdDbContext(
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FaceIdDbContext).Assembly);
+
+        // Wolverine's envelope tables. They live in this context on purpose:
+        // sharing the transaction is what makes the outbox atomic with the
+        // business change that produced the message.
+        modelBuilder.MapWolverineEnvelopeStorage();
 
         ApplyTenantFilters(modelBuilder);
         ApplySnakeCaseNaming(modelBuilder);
