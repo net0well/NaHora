@@ -13,43 +13,49 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          child: MaterialApp(
-            theme: AppTheme.light(),
-            home: const HomeScreen(),
-          ),
+          child: MaterialApp(theme: AppTheme.light(), home: const HomeScreen()),
         ),
       );
       await tester.pumpAndSettle();
     }
 
-    testWidgets('Given the app starts, When home renders, Then title and subtitle are shown',
-        (tester) async {
-      // Arrange & Act
-      await pumpScreen(tester);
+    testWidgets(
+      'Given the app starts, When home renders, Then title and subtitle are shown',
+      (tester) async {
+        // Arrange & Act
+        await pumpScreen(tester);
 
-      // Assert
-      expect(find.byKey(const Key('home_title')), findsOneWidget);
-      expect(find.byKey(const Key('home_subtitle')), findsOneWidget);
-    });
+        // Assert
+        expect(find.byKey(const Key('home_title')), findsOneWidget);
+        expect(find.byKey(const Key('home_subtitle')), findsOneWidget);
+      },
+    );
 
-    testWidgets('Given the app starts, When home renders, Then both entry actions are available',
-        (tester) async {
-      // Arrange & Act
-      await pumpScreen(tester);
+    testWidgets(
+      'Given the app starts, When home renders, Then both entry actions are available',
+      (tester) async {
+        // Arrange & Act
+        await pumpScreen(tester);
 
-      // Assert
-      expect(find.byKey(const Key('home_login_button')), findsOneWidget);
-      expect(find.byKey(const Key('home_register_company_button')), findsOneWidget);
-    });
+        // Assert
+        expect(find.byKey(const Key('home_login_button')), findsOneWidget);
+        expect(
+          find.byKey(const Key('home_register_company_button')),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('Given a 1280x720 window, When home renders, Then nothing overflows',
-        (tester) async {
-      // Arrange & Act
-      await pumpScreen(tester);
+    testWidgets(
+      'Given a 1280x720 window, When home renders, Then nothing overflows',
+      (tester) async {
+        // Arrange & Act
+        await pumpScreen(tester);
 
-      // Assert — an overflow banner in the first screen the user sees would be
-      // the worst possible first impression, and it is trivial to catch here.
-      expect(tester.takeException(), isNull);
-    });
+        // Assert — an overflow banner in the first screen the user sees would be
+        // the worst possible first impression, and it is trivial to catch here.
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

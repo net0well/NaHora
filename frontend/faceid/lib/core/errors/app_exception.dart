@@ -46,7 +46,8 @@ abstract final class ErrorMessages {
 
     // Autenticação
     'INVALID_CREDENTIALS': 'CPF ou senha incorretos.',
-    'ACCOUNT_LOCKED': 'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
+    'ACCOUNT_LOCKED':
+        'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
     'WEAK_PASSWORD': 'A senha não atende aos requisitos de segurança.',
     'CURRENT_PASSWORD_INVALID': 'A senha atual está incorreta.',
     'ONBOARDING_INCOMPLETE': 'Conclua seu primeiro acesso para continuar.',
@@ -54,18 +55,24 @@ abstract final class ErrorMessages {
 
     // Biometria
     'FACE_NOT_DETECTED': 'Não encontramos seu rosto. Verifique a iluminação.',
-    'MULTIPLE_FACES_DETECTED': 'Certifique-se de estar sozinho diante da câmera.',
-    'FACE_QUALITY_TOO_LOW': 'A imagem não ficou nítida. Tente em um local mais claro.',
-    'LIVENESS_FAILED': 'Não foi possível concluir a verificação. Vamos tentar de novo.',
+    'MULTIPLE_FACES_DETECTED':
+        'Certifique-se de estar sozinho diante da câmera.',
+    'FACE_QUALITY_TOO_LOW':
+        'A imagem não ficou nítida. Tente em um local mais claro.',
+    'LIVENESS_FAILED':
+        'Não foi possível concluir a verificação. Vamos tentar de novo.',
     'LIVENESS_CHALLENGE_TIMEOUT': 'O tempo acabou. Vamos tentar novamente.',
-    'FACE_ENROLLMENT_INCONSISTENT': 'As fotos não parecem ser da mesma pessoa. Vamos recomeçar.',
+    'FACE_ENROLLMENT_INCONSISTENT':
+        'As fotos não parecem ser da mesma pessoa. Vamos recomeçar.',
     'FACE_PROFILE_ALREADY_EXISTS': 'Você já possui um cadastro facial ativo.',
-    'BIOMETRIC_CONSENT_REQUIRED': 'É necessário autorizar o uso da sua biometria.',
+    'BIOMETRIC_CONSENT_REQUIRED':
+        'É necessário autorizar o uso da sua biometria.',
     'EMPLOYEE_PROFILE_REQUIRED': 'Cadastre seu rosto antes de bater ponto.',
 
     // Ponto
     'ATTENDANCE_SESSION_EXPIRED': 'A sessão expirou. Inicie novamente.',
-    'MANUAL_ENTRY_REASON_REQUIRED': 'Informe a justificativa da marcação manual.',
+    'MANUAL_ENTRY_REASON_REQUIRED':
+        'Informe a justificativa da marcação manual.',
 
     // Cadastro
     'CNPJ_INVALID': 'CNPJ inválido.',

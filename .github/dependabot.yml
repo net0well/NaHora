@@ -1,0 +1,72 @@
+version: 2
+
+updates:
+  # NuGet versions live in Directory.Packages.props (central package
+  # management), which Dependabot updates in place.
+  - package-ecosystem: nuget
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      microsoft:
+        patterns:
+          - 'Microsoft.*'
+          - 'System.*'
+      wolverine:
+        patterns:
+          - 'WolverineFX*'
+      testing:
+        patterns:
+          - 'xunit*'
+          - 'Shouldly'
+          - 'NSubstitute'
+          - 'Testcontainers*'
+    ignore:
+      # Any move to these would be a licence change, not a version bump. They
+      # must be evaluated by a person, never merged by a bot.
+      - dependency-name: AutoMapper
+      - dependency-name: MediatR
+      - dependency-name: MassTransit
+      - dependency-name: FluentAssertions
+      - dependency-name: SixLabors.ImageSharp
+
+  - package-ecosystem: pub
+    directory: /frontend/faceid
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Sao_Paulo
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: docker
+    directory: /docker/api
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: America/Sao_Paulo
+    commit-message:
+      prefix: chore
+      include: scope
