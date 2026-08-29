@@ -1,16 +1,19 @@
 using System.Reflection;
 using FaceId.Domain.Abstractions;
+using FaceId.Shared.DependencyInjection;
 
 namespace FaceId.ArchitectureTests;
 
 /// <summary>
-/// Executable architecture rules. These are not documentation: a violation fails
-/// the build, which is the only way a dependency rule survives contact with a
-/// deadline.
+/// Executable architecture rules. These are not documentation: a violation
+/// fails the build, which is the only way a dependency rule survives contact
+/// with a deadline.
 /// </summary>
 public sealed class LayerDependencyTests
 {
     private static readonly Assembly DomainAssembly = typeof(Entity).Assembly;
+
+    private static readonly Assembly SharedAssembly = typeof(IScopedService).Assembly;
 
     [Theory]
     [InlineData("FaceId.Infrastructure")]
@@ -31,31 +34,30 @@ public sealed class LayerDependencyTests
     }
 
     [Fact]
-    public void Domain_DependsOnlyOnBaseClassLibrary()
+    public void Domain_ReferencesNothingBeyondShared()
     {
-        // Arrange
+        // Arrange — Shared holds primitives with no domain knowledge (Result,
+        // Error, the DI markers), so depending on it does not invert anything.
         var referenced = DomainAssembly.GetReferencedAssemblies()
             .Select(name => name.Name!)
             .Where(name => name.StartsWith("FaceId", StringComparison.Ordinal))
             .ToArray();
 
         // Act & Assert
-        referenced.ShouldBeEmpty("FaceId.Domain must not reference any other project in the solution.");
+        referenced.ShouldBe(["FaceId.Shared"]);
     }
 
     [Fact]
-    public void Shared_DoesNotReference_Domain()
+    public void Shared_DependsOnNoOtherProject()
     {
-        // Arrange
-        var sharedAssembly = typeof(Shared.DependencyInjection.IScopedService).Assembly;
-
-        // Act
-        var referenced = sharedAssembly.GetReferencedAssemblies()
+        // Arrange & Act
+        var referenced = SharedAssembly.GetReferencedAssemblies()
             .Select(name => name.Name!)
             .Where(name => name.StartsWith("FaceId", StringComparison.Ordinal))
             .ToArray();
 
-        // Assert
-        referenced.ShouldBeEmpty("FaceId.Shared holds primitives and must not depend on the domain.");
+        // Assert — the moment Shared depends on Domain, the direction inverts
+        // and Domain's dependency on Shared becomes a cycle.
+        referenced.ShouldBeEmpty("FaceId.Shared holds primitives and must not depend on any project.");
     }
 }

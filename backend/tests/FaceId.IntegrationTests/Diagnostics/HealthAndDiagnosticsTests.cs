@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using FaceId.IntegrationTests.Contracts;
 using FaceId.IntegrationTests.Fixtures;
 
 namespace FaceId.IntegrationTests.Diagnostics;
@@ -48,7 +49,7 @@ public sealed class HealthAndDiagnosticsTests(ApiFixture fixture) : IClassFixtur
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var payload = await response.Content.ReadFromJsonAsync<SystemInfoResponse>(TestContext.Current.CancellationToken);
+        var payload = await response.Content.ReadFromJsonAsync<SystemInfoContract>(TestContext.Current.CancellationToken);
         payload.ShouldNotBeNull();
         payload.Application.ShouldBe("FaceId");
         payload.ServerTimeUtc.ShouldNotBe(default);
@@ -66,10 +67,4 @@ public sealed class HealthAndDiagnosticsTests(ApiFixture fixture) : IClassFixtur
         body.ShouldNotContain("at FaceId.");
         body.ShouldNotContain("Exception");
     }
-
-    private sealed record SystemInfoResponse(
-        string Application,
-        string Version,
-        string Environment,
-        DateTimeOffset ServerTimeUtc);
 }

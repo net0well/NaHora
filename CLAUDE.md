@@ -94,6 +94,64 @@ continue explícito.
 Toda nova dependência passa por verificação de licença antes de entrar em
 `Directory.Packages.props`.
 
+### Um tipo por arquivo
+
+Cada classe, record, interface, enum ou struct vive no seu próprio arquivo,
+nomeado como o tipo. Enums não moram dentro da entidade que os usa. Arquivos são
+organizados por feature, não por categoria técnica.
+
+### Notification pattern, não exceção
+
+Regra de negócio **não lança exceção**. Retorna `Result` ou `Result<T>`, que
+carrega *todos* os erros encontrados, não só o primeiro — um formulário que
+rejeita um campo por vez é um formulário que o usuário abandona.
+
+```csharp
+public static Result<Employee> Hire(...)
+{
+    var errors = new List<Error>();
+    if (companyId == Guid.Empty) errors.Add(EmployeeErrors.CompanyRequired());
+    if (string.IsNullOrWhiteSpace(fullName)) errors.Add(EmployeeErrors.NameRequired());
+    if (errors.Count > 0) return Result.Failure<Employee>(errors);
+    return new Employee(...);
+}
+```
+
+Exceção fica para o genuinamente excepcional: banco fora do ar, modelo ONNX que
+não carrega, bug de referência nula. Essas sobem para o `GlobalExceptionHandler`.
+
+**Na fronteira da API os dois convergem** em `application/problem+json`. O
+cliente nunca vê stack trace nem mensagem de exceção — só um `code` estável e uma
+mensagem segura.
+
+### Catálogo de erros
+
+Todo erro é declarado em `Domain/Errors/`, um arquivo por agregado
+(`CompanyErrors`, `UserErrors`, `EmployeeErrors`, `ValueObjectErrors`). Nunca
+criar `Error` inline no meio de uma regra.
+
+```csharp
+public static Error NameRequired() => Error.Validation(
+    "USER_NAME_REQUIRED", "Full name is required.", "fullName");
+```
+
+O `Code` em SCREAMING_SNAKE_CASE é o contrato com o Flutter, que traduz por ele.
+A mensagem pode ser reescrita à vontade; o código, não.
+
+### Repositório e unit of work
+
+Repositórios são **específicos por agregado**, nunca genéricos: cada método é uma
+pergunta que o domínio realmente faz. Porta no domínio, implementação na
+Infrastructure.
+
+`IUnitOfWork` existe para quando atomicidade é regra de negócio — a alocação de
+NSR é o caso claro, porque um número consumido e revertido deixaria lacuna, e a
+Portaria 671 exige sequência sem nenhuma.
+
+Leitura para listagem e relatório **não** passa por repositório: projeta direto
+para DTO, porque carregar agregado inteiro para renderizar tabela é desperdício
+que o banco paga.
+
 ### Dados biométricos
 
 - Embeddings **cifrados em repouso** (AES-256-GCM)
@@ -179,6 +237,14 @@ Escopos: `auth`, `company`, `employee`, `schedule`, `biometrics`, `attendance`,
 ```
 
 Exemplo: `feat(attendance): register attendance with biometric validation`
+
+### Granularidade — um commit por unidade de implementação
+
+Uma branch tem **vários commits**, nunca um commit único com tudo. Cada commit
+entrega uma peça coerente e revisável isoladamente: o value object, depois a
+entidade, depois o mapeamento, depois a migration, depois os testes.
+
+Um commit gigante torna a revisão impossível e o `git bisect` inútil.
 
 O **tipo do commit** segue Conventional Commits (`feat`), enquanto a **branch**
 usa o prefixo por extenso (`feature/`). São convenções distintas e ambas valem.

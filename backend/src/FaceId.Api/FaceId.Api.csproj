@@ -5,6 +5,7 @@
     <PackageReference Include="WolverineFx.RuntimeCompilation" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
   </ItemGroup>
 

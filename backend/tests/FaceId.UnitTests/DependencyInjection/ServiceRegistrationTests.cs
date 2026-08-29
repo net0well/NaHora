@@ -1,4 +1,5 @@
 using FaceId.Shared.DependencyInjection;
+using FaceId.UnitTests.DependencyInjection.Fakes;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FaceId.UnitTests.DependencyInjection;
@@ -72,16 +73,3 @@ public sealed class ServiceRegistrationTests
         scope.ServiceProvider.GetRequiredService<ISampleOverriddenService>().ShouldNotBeNull();
     }
 }
-
-public interface ISampleScopedService;
-
-internal sealed class SampleScopedService : ISampleScopedService, IScopedService;
-
-public interface ISampleSingletonService;
-
-internal sealed class SampleSingletonService : ISampleSingletonService, ISingletonService;
-
-public interface ISampleOverriddenService;
-
-[Service(ServiceLifetime.Transient)]
-internal sealed class SampleOverriddenService : ISampleOverriddenService, IScopedService;
