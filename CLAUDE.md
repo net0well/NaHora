@@ -100,6 +100,29 @@ Cada classe, record, interface, enum ou struct vive no seu próprio arquivo,
 nomeado como o tipo. Enums não moram dentro da entidade que os usa. Arquivos são
 organizados por feature, não por categoria técnica.
 
+### Aggregate root explícito na declaração
+
+A distinção fica visível na assinatura da classe, sem precisar abrir mais nada:
+
+```csharp
+public sealed class Employee : AggregateRoot   // carregado e salvo sozinho
+public sealed class FaceEmbedding : Entity     // só alcançado pelo seu root
+```
+
+O que decorre de ser root:
+
+- **Só root tem repositório.** Filho é carregado e salvo através do root.
+- **Só root é referenciado por id de fora do agregado.** Referência a um filho
+  vindo de outro agregado é erro de modelagem.
+- O root garante as invariantes que atravessam seus filhos, e por isso o
+  agregado inteiro commita junto.
+
+Na dúvida, **não** é root. Promover errado quebra uma fronteira de consistência
+que o domínio esperava manter.
+
+Regra verificada por teste de arquitetura: todo repositório aponta para um
+`AggregateRoot`, todo root é `sealed`, e nenhuma entidade expõe setter público.
+
 ### Notification pattern, não exceção
 
 Regra de negócio **não lança exceção**. Retorna `Result` ou `Result<T>`, que

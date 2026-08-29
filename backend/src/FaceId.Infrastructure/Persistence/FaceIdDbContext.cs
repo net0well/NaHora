@@ -21,6 +21,8 @@ public sealed class FaceIdDbContext(
 
     public DbSet<Employee> Employees => Set<Employee>();
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     /// <summary>
     /// Read by the global query filter on every query. EF re-evaluates it per
     /// execution rather than baking the value into a cached plan.

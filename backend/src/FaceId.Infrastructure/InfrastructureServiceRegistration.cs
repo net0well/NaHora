@@ -26,6 +26,16 @@ public static class InfrastructureServiceRegistration
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<PasswordHashingOptions>()
+            .Bind(configuration.GetSection(PasswordHashingOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         var database = configuration.GetSection(DatabaseOptions.SectionName).Get<DatabaseOptions>()
                        ?? throw new InvalidOperationException(
                            $"Configuration section '{DatabaseOptions.SectionName}' is missing.");
@@ -33,6 +43,9 @@ public static class InfrastructureServiceRegistration
         services.AddDbContext<FaceIdDbContext>(options =>
             options.UseNpgsql(database.ConnectionString, npgsql =>
                 npgsql.CommandTimeout(database.CommandTimeoutSeconds)));
+
+        // The current-user adapter reads claims off the ambient request.
+        services.AddHttpContextAccessor();
 
         services.AddServicesFrom(typeof(InfrastructureServiceRegistration).Assembly);
 
