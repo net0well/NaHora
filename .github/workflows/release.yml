@@ -1,0 +1,170 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  FLUTTER_VERSION: '3.47.2'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # A tag must never publish something that would not have passed review.
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore FaceId.slnx
+
+      - name: Build
+        run: dotnet build FaceId.slnx --configuration Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test --project tests/FaceId.UnitTests/FaceId.UnitTests.csproj --configuration Release --no-build
+
+      - name: Architecture tests
+        run: dotnet test --project tests/FaceId.ArchitectureTests/FaceId.ArchitectureTests.csproj --configuration Release --no-build
+
+      - name: Integration tests
+        run: dotnet test --project tests/FaceId.IntegrationTests/FaceId.IntegrationTests.csproj --configuration Release --no-build
+
+  # ---------------------------------------------------------------------------
+  # One artifact, promoted across environments. The image built here is the
+  # image that reaches production — nothing is rebuilt per environment, because
+  # a rebuild is a different binary no matter how identical the source.
+  # ---------------------------------------------------------------------------
+  publish-image:
+    name: Publish container image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [verify]
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/api
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=long
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+  build-desktop:
+    name: Build Windows desktop
+    runs-on: windows-latest
+    timeout-minutes: 25
+    needs: [verify]
+    defaults:
+      run:
+        working-directory: frontend/faceid
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Test
+        run: flutter test
+
+      # API_BASE_URL is injected at build time and must be HTTPS: main.dart
+      # asserts on it so a plaintext production build fails instead of shipping
+      # credentials and biometric frames in the clear.
+      - name: Build release
+        run: >
+          flutter build windows --release
+          --dart-define=PRODUCTION=true
+          --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
+
+      - name: Package
+        shell: pwsh
+        run: |
+          Compress-Archive `
+            -Path build/windows/x64/runner/Release/* `
+            -DestinationPath faceid-windows-${{ github.ref_name }}.zip
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: faceid-windows-${{ github.ref_name }}
+          path: frontend/faceid/faceid-windows-${{ github.ref_name }}.zip
+          retention-days: 90
+
+  create-release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    needs: [publish-image, build-desktop]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download desktop package
+        uses: actions/download-artifact@v4
+        with:
+          name: faceid-windows-${{ github.ref_name }}
+          path: ./artifacts
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./artifacts/*.zip
+          generate_release_notes: true
+          draft: true

@@ -158,15 +158,15 @@ técnica local, ou referência a norma quando o código implementa regra legal.
 ### Branches semânticas
 
 ```
-main                          produção
-develop                       integração
-feat/<escopo>-<descricao>     nova funcionalidade
-fix/<escopo>-<descricao>      correção
-refactor/<escopo>-<descricao> refatoração sem mudança de comportamento
-test/<escopo>-<descricao>     apenas testes
-chore/<escopo>-<descricao>    build, deps, tooling
-docs/<escopo>-<descricao>     documentação
-perf/<escopo>-<descricao>     performance
+main                             produção
+develop                          integração
+feature/<escopo>-<descricao>     nova funcionalidade
+fix/<escopo>-<descricao>         correção de defeito
+refactor/<escopo>-<descricao>    refatoração sem mudança de comportamento
+test/<escopo>-<descricao>        apenas testes
+chore/<escopo>-<descricao>       build, dependências, tooling
+docs/<escopo>-<descricao>        documentação
+perf/<escopo>-<descricao>        performance
 ```
 
 Escopos: `auth`, `company`, `employee`, `schedule`, `biometrics`, `attendance`,
@@ -179,6 +179,9 @@ Escopos: `auth`, `company`, `employee`, `schedule`, `biometrics`, `attendance`,
 ```
 
 Exemplo: `feat(attendance): register attendance with biometric validation`
+
+O **tipo do commit** segue Conventional Commits (`feat`), enquanto a **branch**
+usa o prefixo por extenso (`feature/`). São convenções distintas e ambas valem.
 
 ### Nunca versionar
 

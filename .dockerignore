@@ -1,0 +1,40 @@
+# Build output
+**/bin/
+**/obj/
+**/TestResults/
+**/coverage/
+
+# Secrets and credentials — must never enter the build context
+.env
+.env.*
+!.env.example
+certs/
+*.pfx
+*.p12
+*.pem
+*.key
+appsettings.Local.json
+
+# ONNX models are mounted at runtime, not baked into the image
+models/
+*.onnx
+
+# Frontend is not part of the API image
+frontend/
+
+# Specs and local tooling
+FaceIdSpecs/
+docs/
+.github/
+.git/
+.vs/
+.idea/
+.vscode/
+
+# Docs
+*.md
+!models/README.md
+
+# Generated regulatory output
+*.afd
+*.p7s
