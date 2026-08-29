@@ -1,5 +1,4 @@
 using FaceId.Domain.Abstractions;
-using FaceId.Shared.DependencyInjection;
 
 namespace FaceId.Infrastructure.Identity;
 
@@ -9,11 +8,14 @@ namespace FaceId.Infrastructure.Identity;
 /// </summary>
 /// <remarks>
 /// Reports <see cref="IsAuthenticated"/> as false, which disables the tenant
-/// query filter. That is intended for system work, and it is exactly why the
-/// HTTP pipeline must replace this registration with one that reads the token —
-/// leaving it in place on a request path would disable isolation.
+/// query filter — correct for system work.
+///
+/// Deliberately not registered in DI. The request pipeline resolves
+/// <see cref="HttpContextCurrentUser"/> instead, and two competing
+/// registrations for the same port would let the last one win silently. This
+/// type is constructed explicitly, by the design-time factory and by tests.
 /// </remarks>
-internal sealed class SystemCurrentUser : ICurrentUser, IScopedService
+internal sealed class SystemCurrentUser : ICurrentUser
 {
     public Guid UserId => Guid.Empty;
 

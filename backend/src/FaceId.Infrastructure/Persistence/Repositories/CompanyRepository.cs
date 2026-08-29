@@ -5,7 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FaceId.Infrastructure.Persistence.Repositories;
 
-internal sealed class CompanyRepository(FaceIdDbContext dbContext) : ICompanyRepository, IScopedService
+/// <remarks>
+/// Public so Wolverine's generated handler code can construct it directly; an
+/// internal adapter would force service location, which the runtime rejects.
+/// </remarks>
+public sealed class CompanyRepository(FaceIdDbContext dbContext) : ICompanyRepository, IScopedService
 {
     /// <summary>
     /// Company is the tenant itself, not a tenant-owned entity, so no global

@@ -5,7 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FaceId.Infrastructure.Persistence.Repositories;
 
-internal sealed class UserRepository(FaceIdDbContext dbContext) : IUserRepository, IScopedService
+/// <remarks>
+/// Public because Wolverine generates handler code that constructs this type
+/// directly. An internal adapter forces the generated code into service
+/// location, which the runtime rejects under ServiceLocationPolicy.NotAllowed.
+/// The port stays the contract: nothing outside the composition root
+/// references this class, and an architecture test keeps it that way.
+/// </remarks>
+public sealed class UserRepository(FaceIdDbContext dbContext) : IUserRepository, IScopedService
 {
     public Task<User?> GetByIdAsync(Guid companyId, Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Users

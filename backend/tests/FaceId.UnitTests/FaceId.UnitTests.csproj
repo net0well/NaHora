@@ -20,6 +20,7 @@
     <ProjectReference Include="..\..\src\FaceId.Domain\FaceId.Domain.csproj" />
     <ProjectReference Include="..\..\src\FaceId.Features\FaceId.Features.csproj" />
     <ProjectReference Include="..\..\src\FaceId.Shared\FaceId.Shared.csproj" />
+    <ProjectReference Include="..\..\src\FaceId.Infrastructure\FaceId.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

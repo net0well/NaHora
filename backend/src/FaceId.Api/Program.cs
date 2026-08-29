@@ -1,24 +1,31 @@
+using FaceId.Api.Authentication;
 using FaceId.Api.Diagnostics;
+using FaceId.Api.Observability;
 using FaceId.Api.OpenApi;
+using FaceId.Api.RateLimiting;
 using FaceId.Features;
 using FaceId.Infrastructure;
+using FaceId.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using Wolverine;
+using Wolverine.EntityFrameworkCore;
+using Wolverine.Postgresql;
+using Wolverine.RabbitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog((context, services, configuration) => configuration
-    .ReadFrom.Configuration(context.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .Enrich.WithProperty("Application", "FaceId"));
+builder.Host.UseFaceIdLogging();
 
 builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
+
+builder.Services.AddFaceIdAuthentication(builder.Configuration, builder.Environment);
+builder.Services.AddFaceIdRateLimiting(builder.Configuration);
+builder.Services.AddFaceIdTelemetry(builder.Configuration);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -31,24 +38,76 @@ builder.Services.AddHealthChecks()
         failureStatus: HealthStatus.Unhealthy,
         tags: ["ready"]);
 
+var messaging = builder.Configuration.GetSection(MessagingOptions.SectionName).Get<MessagingOptions>()
+                ?? new MessagingOptions();
+
+var databaseConnectionString =
+    builder.Configuration.GetSection(DatabaseOptions.SectionName).Get<DatabaseOptions>()?.ConnectionString
+    ?? throw new InvalidOperationException("Database connection string is required for the message store.");
+
 builder.Host.UseWolverine(options =>
 {
     options.Discovery.IncludeAssembly(typeof(FeaturesServiceRegistration).Assembly);
 
-    // Local-only for now. The RabbitMQ transport and the EF Core outbox are
-    // wired when the first integration event exists, not before.
+    // The envelope store. UseEntityFrameworkCoreTransactions only enlists the
+    // DbContext in the transaction; without a store there is nowhere to durably
+    // hold the outgoing message, and the handler fails at runtime.
+    options.PersistMessagesWithPostgresql(databaseConnectionString);
+
+    options.UseEntityFrameworkCoreTransactions();
+
+    // Enrols every handler in a transaction that also covers the outbox write.
+    // A message is therefore only sent if the change that produced it
+    // committed — closing the dual-write problem this exists for.
     options.Policies.AutoApplyTransactions();
+
+    if (messaging.Enabled)
+    {
+        options.UseRabbitMq(factory =>
+            {
+                factory.HostName = messaging.Host;
+                factory.Port = messaging.Port;
+                factory.UserName = messaging.Username;
+                factory.Password = messaging.Password;
+                factory.VirtualHost = messaging.VirtualHost;
+            })
+            .AutoProvision()
+            .BindExchange(messaging.Exchange)
+            .ToQueue(messaging.Queue);
+
+        // Publishing alone is half a pipeline: without a bound queue and a
+        // listener the message leaves and nothing brings it back, so the
+        // consumer never runs. The exchange fans out, the queue holds, and the
+        // listener delivers to the handler.
+        options.PublishAllMessages().ToRabbitExchange(messaging.Exchange);
+
+        options.ListenToRabbitQueue(messaging.Queue)
+            .UseDurableInbox();
+    }
 });
 
 var app = builder.Build();
 
+await DatabaseMigrator.MigrateAsync(app);
+
 app.UseExceptionHandler();
+
+// Before the request log, so every line it writes already carries the
+// correlation identifier.
+app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseSerilogRequestLogging();
+
+app.UseRateLimiter();
+
+// Order matters: authentication populates the principal that authorisation and
+// the tenant filter both read.
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {
-    // The document is produced by the built-in generator; Swashbuckle supplies
-    // only the interface. The deprecated AddSwaggerGen path is not used.
+    // The document comes from the built-in generator; Swashbuckle supplies only
+    // the interface. The deprecated AddSwaggerGen path is not used.
     app.MapOpenApi();
 
     app.UseSwaggerUI(options =>

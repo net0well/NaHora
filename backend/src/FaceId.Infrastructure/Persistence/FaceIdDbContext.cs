@@ -4,6 +4,7 @@ using FaceId.Domain.Companies;
 using FaceId.Domain.Employees;
 using FaceId.Domain.Users;
 using Microsoft.EntityFrameworkCore;
+using Wolverine.EntityFrameworkCore;
 
 namespace FaceId.Infrastructure.Persistence;
 
@@ -20,6 +21,8 @@ public sealed class FaceIdDbContext(
     public DbSet<User> Users => Set<User>();
 
     public DbSet<Employee> Employees => Set<Employee>();
+
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     /// <summary>
     /// Read by the global query filter on every query. EF re-evaluates it per
@@ -38,6 +41,11 @@ public sealed class FaceIdDbContext(
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(FaceIdDbContext).Assembly);
+
+        // Wolverine's envelope tables. They live in this context on purpose:
+        // sharing the transaction is what makes the outbox atomic with the
+        // business change that produced the message.
+        modelBuilder.MapWolverineEnvelopeStorage();
 
         ApplyTenantFilters(modelBuilder);
         ApplySnakeCaseNaming(modelBuilder);

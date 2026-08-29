@@ -5,7 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FaceId.Infrastructure.Persistence.Repositories;
 
-internal sealed class EmployeeRepository(FaceIdDbContext dbContext) : IEmployeeRepository, IScopedService
+/// <remarks>
+/// Public so Wolverine's generated handler code can construct it directly; an
+/// internal adapter would force service location, which the runtime rejects.
+/// </remarks>
+public sealed class EmployeeRepository(FaceIdDbContext dbContext) : IEmployeeRepository, IScopedService
 {
     public Task<Employee?> GetByIdAsync(Guid companyId, Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Employees

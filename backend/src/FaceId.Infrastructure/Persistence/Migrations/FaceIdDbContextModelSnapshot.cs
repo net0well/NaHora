@@ -18,7 +18,8 @@ namespace FaceId.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.11")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63)
+                .HasAnnotation("WolverineEnabled", "true");
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
@@ -172,6 +173,73 @@ namespace FaceId.Infrastructure.Persistence.Migrations
                     b.ToTable("employees", (string)null);
                 });
 
+            modelBuilder.Entity("FaceId.Domain.Users.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)")
+                        .HasColumnName("created_by_ip");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<Guid?>("ReplacedByTokenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("replaced_by_token_id");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(44)
+                        .HasColumnType("character varying(44)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("user_agent");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_refresh_tokens");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_refresh_tokens_family");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_refresh_tokens_hash");
+
+                    b.HasIndex("UserId", "ExpiresAt")
+                        .HasDatabaseName("ix_refresh_tokens_user_expiry");
+
+                    b.ToTable("refresh_tokens", (string)null);
+                });
+
             modelBuilder.Entity("FaceId.Domain.Users.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -253,6 +321,100 @@ namespace FaceId.Infrastructure.Persistence.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("Wolverine.EntityFrameworkCore.Internals.IncomingMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<byte[]>("Body")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset?>("ExecutionTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("execution_time");
+
+                    b.Property<DateTimeOffset?>("KeepUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("keep_until");
+
+                    b.Property<string>("MessageType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message_type");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("owner_id");
+
+                    b.Property<string>("ReceivedAt")
+                        .HasColumnType("text")
+                        .HasColumnName("received_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_wolverine_incoming_envelopes");
+
+                    b.ToTable("wolverine_incoming_envelopes", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
+            modelBuilder.Entity("Wolverine.EntityFrameworkCore.Internals.OutgoingMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<byte[]>("Body")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset?>("DeliverBy")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deliver_by");
+
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("destination");
+
+                    b.Property<string>("MessageType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message_type");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("owner_id");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_wolverine_outgoing_envelopes");
+
+                    b.ToTable("wolverine_outgoing_envelopes", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("FaceId.Domain.Employees.Employee", b =>
                 {
                     b.HasOne("FaceId.Domain.Companies.Company", null)
@@ -268,6 +430,16 @@ namespace FaceId.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("f_k_employees_users_user_id");
+                });
+
+            modelBuilder.Entity("FaceId.Domain.Users.RefreshToken", b =>
+                {
+                    b.HasOne("FaceId.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("f_k_refresh_tokens_users_user_id");
                 });
 
             modelBuilder.Entity("FaceId.Domain.Users.User", b =>

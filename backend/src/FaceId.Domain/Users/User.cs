@@ -18,7 +18,7 @@ namespace FaceId.Domain.Users;
 /// wrong.
 /// </remarks>
 [Audit(IgnoredProperties = [nameof(LastLoginAt), nameof(FailedLoginAttempts), nameof(LockedUntil)])]
-public sealed class User : Entity, ITenantOwned
+public sealed class User : AggregateRoot, ITenantOwned
 {
     private User()
     {

@@ -11,8 +11,11 @@ namespace FaceId.Infrastructure.Persistence;
 /// the pattern. The port exists so handlers can express "commit these changes
 /// together" without taking a dependency on EF Core, and so the NSR allocation
 /// can hold a real transaction across two aggregates.
+///
+/// Public so Wolverine's generated handler code can construct it directly; an
+/// internal adapter would force service location, which the runtime rejects.
 /// </remarks>
-internal sealed class UnitOfWork(FaceIdDbContext dbContext) : IUnitOfWork, IScopedService
+public sealed class UnitOfWork(FaceIdDbContext dbContext) : IUnitOfWork, IScopedService
 {
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
         dbContext.SaveChangesAsync(cancellationToken);

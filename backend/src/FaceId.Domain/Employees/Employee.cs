@@ -10,7 +10,7 @@ namespace FaceId.Domain.Employees;
 /// working-hours calculation.
 /// </summary>
 [Audit]
-public sealed class Employee : Entity, ITenantOwned
+public sealed class Employee : AggregateRoot, ITenantOwned
 {
     private Employee()
     {
