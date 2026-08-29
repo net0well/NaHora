@@ -2,6 +2,7 @@ using FaceId.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -32,6 +33,24 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
         ArgumentNullException.ThrowIfNull(builder);
 
         builder.UseEnvironment(Environments.Development);
+
+        // Overriding the DbContext registration alone is not enough. Wolverine's
+        // message store reads the connection string from configuration and opens
+        // its own connection, so without this it would reach for whatever the
+        // settings file names — which on a build agent is nothing at all.
+        builder.ConfigureAppConfiguration((_, configuration) =>
+            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Database:ConnectionString"] = _postgres.GetConnectionString(),
+
+                // No broker on the agent. The outbox still runs and still keeps
+                // its transactional guarantee; only the transport is dropped.
+                ["Messaging:Enabled"] = "false",
+
+                // Nothing collects OTLP here, and an exporter retrying into
+                // nothing would only slow the suite down.
+                ["OTEL_EXPORTER_OTLP_ENDPOINT"] = string.Empty
+            }));
 
         builder.ConfigureServices(services =>
         {
