@@ -38,15 +38,15 @@ jobs:
         working-directory: backend
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props') }}
@@ -75,7 +75,7 @@ jobs:
         run: dotnet test --project tests/FaceId.IntegrationTests/FaceId.IntegrationTests.csproj --configuration Release --no-build
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-test-results
@@ -96,7 +96,7 @@ jobs:
         working-directory: frontend/faceid
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -123,7 +123,7 @@ jobs:
         run: flutter build windows --release
 
       - name: Upload Windows build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: faceid-windows
           path: frontend/faceid/build/windows/x64/runner/Release/
@@ -139,18 +139,26 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Gitleaks needs history to scan commits, not just the tree.
           fetch-depth: 0
 
+      # The official action posts PR comments, which requires
+      # pull-requests:write. Running the binary performs the same scan under
+      # contents:read alone — a scanner has no business writing to the repo.
       - name: Scan for committed secrets
-        uses: gitleaks/gitleaks-action@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: '8.24.3'
+        run: |
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl --silent --show-error --location "$url" | tar --extract --gzip --directory /tmp gitleaks
+          # --redact keeps any finding out of the build log, which is itself
+          # readable by anyone with access to the run.
+          /tmp/gitleaks detect --source . --no-banner --redact --exit-code 1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -198,13 +206,13 @@ jobs:
     needs: [backend]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/api/Dockerfile
