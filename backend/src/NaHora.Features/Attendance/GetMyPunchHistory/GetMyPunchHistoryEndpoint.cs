@@ -24,7 +24,6 @@ internal sealed class GetMyPunchHistoryEndpoint : IEndpointGroup
                 "da faixa são ajustados em vez de rejeitados — um cliente que pediu " +
                 "demais recebe o teto, não um erro.")
             .Produces<GetMyPunchHistoryResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
     }
