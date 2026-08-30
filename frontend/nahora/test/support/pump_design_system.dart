@@ -30,7 +30,8 @@ Future<void> pumpComponent(WidgetTester tester, Widget component) async {
 Future<void> pumpScreen(
   WidgetTester tester,
   Widget screen, {
-  Size size = const Size(1280, 720),
+  Size size = const Size(390, 844),
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -38,6 +39,7 @@ Future<void> pumpScreen(
 
   await tester.pumpWidget(
     ProviderScope(
+      overrides: overrides,
       child: ShadTheme(
         data: AppTheme.shad(),
         child: MaterialApp(theme: AppTheme.light(), home: screen),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'core/config/app_config.dart';
@@ -19,11 +20,15 @@ void main() {
   runApp(const ProviderScope(child: NaHoraApp()));
 }
 
-class NaHoraApp extends StatelessWidget {
+/// Built once and kept, because rebuilding the router would reset navigation
+/// every time the session changes — which is exactly when it must not.
+final _routerProvider = Provider<GoRouter>(AppRouter.create);
+
+class NaHoraApp extends ConsumerWidget {
   const NaHoraApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Both themes are in scope: our components are adapters over the library,
     // and the screens they sit on are still Material. Wrapping the Material app
     // rather than replacing it is what lets the two coexist during the
@@ -34,7 +39,7 @@ class NaHoraApp extends StatelessWidget {
         title: 'NaHora',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light(),
-        routerConfig: AppRouter.create(),
+        routerConfig: ref.watch(_routerProvider),
         builder: (context, child) => ShadAppBuilder(child: child!),
       ),
     );
