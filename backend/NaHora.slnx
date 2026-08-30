@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NaHora.Api/NaHora.Api.csproj" />
+    <Project Path="src/NaHora.Domain/NaHora.Domain.csproj" />
+    <Project Path="src/NaHora.Features/NaHora.Features.csproj" />
+    <Project Path="src/NaHora.Infrastructure/NaHora.Infrastructure.csproj" />
+    <Project Path="src/NaHora.Shared/NaHora.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NaHora.UnitTests/NaHora.UnitTests.csproj" />
+    <Project Path="tests/NaHora.IntegrationTests/NaHora.IntegrationTests.csproj" />
+    <Project Path="tests/NaHora.ArchitectureTests/NaHora.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>

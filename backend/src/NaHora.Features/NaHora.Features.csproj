@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WolverineFX" />
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NaHora.Domain\NaHora.Domain.csproj" />
+    <ProjectReference Include="..\NaHora.Shared\NaHora.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

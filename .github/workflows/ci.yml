@@ -53,26 +53,26 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore
-        run: dotnet restore FaceId.slnx
+        run: dotnet restore NaHora.slnx
 
       # TreatWarningsAsErrors is on in Directory.Build.props: a warning fails
       # here rather than accumulating until nobody reads them.
       - name: Build
-        run: dotnet build FaceId.slnx --configuration Release --no-restore
+        run: dotnet build NaHora.slnx --configuration Release --no-restore
 
       - name: Verify formatting
-        run: dotnet format FaceId.slnx --verify-no-changes --no-restore --severity warn
+        run: dotnet format NaHora.slnx --verify-no-changes --no-restore --severity warn
 
       - name: Unit tests
-        run: dotnet test --project tests/FaceId.UnitTests/FaceId.UnitTests.csproj --configuration Release --no-build
+        run: dotnet test --project tests/NaHora.UnitTests/NaHora.UnitTests.csproj --configuration Release --no-build
 
       # Guards dependency direction, slice isolation and the commercial-licence
       # ban. A violation here is an architecture regression, not a style nit.
       - name: Architecture tests
-        run: dotnet test --project tests/FaceId.ArchitectureTests/FaceId.ArchitectureTests.csproj --configuration Release --no-build
+        run: dotnet test --project tests/NaHora.ArchitectureTests/NaHora.ArchitectureTests.csproj --configuration Release --no-build
 
       - name: Integration tests
-        run: dotnet test --project tests/FaceId.IntegrationTests/FaceId.IntegrationTests.csproj --configuration Release --no-build
+        run: dotnet test --project tests/NaHora.IntegrationTests/NaHora.IntegrationTests.csproj --configuration Release --no-build
 
       - name: Upload test results
         uses: actions/upload-artifact@v7
@@ -94,7 +94,7 @@ jobs:
     timeout-minutes: 25
     defaults:
       run:
-        working-directory: frontend/faceid
+        working-directory: frontend/nahora
 
     steps:
       - uses: actions/checkout@v7
@@ -137,15 +137,15 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: faceid-android
-          path: frontend/faceid/build/app/outputs/flutter-apk/app-release.apk
+          name: nahora-android
+          path: frontend/nahora/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 7
 
       - name: Upload debug symbols
         uses: actions/upload-artifact@v7
         with:
-          name: faceid-android-symbols
-          path: frontend/faceid/build/symbols/
+          name: nahora-android-symbols
+          path: frontend/nahora/build/symbols/
           retention-days: 30
 
   # ---------------------------------------------------------------------------
@@ -183,19 +183,19 @@ jobs:
 
       - name: Restore
         working-directory: backend
-        run: dotnet restore FaceId.slnx
+        run: dotnet restore NaHora.slnx
 
       - name: Audit NuGet dependencies
         working-directory: backend
         run: |
-          dotnet list FaceId.slnx package --vulnerable --include-transitive 2>&1 | tee audit.txt
+          dotnet list NaHora.slnx package --vulnerable --include-transitive 2>&1 | tee audit.txt
           if grep --quiet "has the following vulnerable packages" audit.txt; then
             echo "::error::Vulnerable NuGet packages found"
             exit 1
           fi
 
       - name: Audit Flutter dependencies
-        working-directory: frontend/faceid
+        working-directory: frontend/nahora
         run: |
           if grep --quiet --extended-regexp "^\s+[a-z_]+:\s*any\s*$" pubspec.yaml; then
             echo "::error::Unconstrained ('any') dependency version in pubspec.yaml"
@@ -206,7 +206,7 @@ jobs:
       # barrier; this is the one that fails the build if the first is bypassed.
       - name: Verify no secrets or restricted assets are tracked
         run: |
-          tracked=$(git ls-files | grep --extended-regexp '\.(pfx|p12|pem|key|onnx)$|(^|/)\.env$|FaceIdSpecs/' || true)
+          tracked=$(git ls-files | grep --extended-regexp '\.(pfx|p12|pem|key|onnx)$|(^|/)\.env$|NaHoraSpecs/' || true)
           if [ -n "$tracked" ]; then
             echo "::error::Restricted files are tracked by git:"
             echo "$tracked"
@@ -231,8 +231,8 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_DB: faceid
-          POSTGRES_USER: faceid
+          POSTGRES_DB: nahora
+          POSTGRES_USER: nahora
           POSTGRES_PASSWORD: ci
         ports:
           - 5432:5432
@@ -255,7 +255,7 @@ jobs:
           file: docker/api/Dockerfile
           push: false
           load: true
-          tags: faceid-api:ci
+          tags: nahora-api:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -265,27 +265,27 @@ jobs:
           # Throwaway values: the container only has to boot and answer its
           # liveness probe. The signing key is deliberately not the example
           # value, so the guard that rejects that one stays meaningful.
-          docker run --detach --name faceid-api-smoke --network host \
-            --env Database__ConnectionString="Host=localhost;Database=faceid;Username=faceid;Password=ci" \
+          docker run --detach --name nahora-api-smoke --network host \
+            --env Database__ConnectionString="Host=localhost;Database=nahora;Username=nahora;Password=ci" \
             --env Database__AutoMigrate="false" \
             --env Storage__Endpoint="localhost:9000" \
             --env Storage__AccessKey="ci" \
             --env Storage__SecretKey="ci" \
             --env Jwt__SigningKey="ci-smoke-test-only-signing-key-32-bytes-min" \
-            faceid-api:ci
+            nahora-api:ci
 
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://localhost:8080/health/live > /dev/null; then
               echo "Container is live after ${attempt}s"
-              docker rm --force faceid-api-smoke > /dev/null
+              docker rm --force nahora-api-smoke > /dev/null
               exit 0
             fi
             sleep 1
           done
 
           echo "::error::Container did not become live within 30s"
-          docker logs faceid-api-smoke
-          docker rm --force faceid-api-smoke > /dev/null
+          docker logs nahora-api-smoke
+          docker rm --force nahora-api-smoke > /dev/null
           exit 1
 
   # ---------------------------------------------------------------------------

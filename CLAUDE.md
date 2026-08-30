@@ -1,6 +1,6 @@
-# FaceId — Convenções do Projeto
+# NaHora — Convenções do Projeto
 
-Plataforma de controle de ponto com reconhecimento facial, anti-fraude e
+Plataforma de controle de ponto por geolocalização, com modo offline, anti-fraude e
 conformidade com a Portaria MTP 671/2021 (REP-P).
 
 ---
@@ -41,11 +41,11 @@ tarefa:
 
 ```
 backend/src/
-├── FaceId.Api/             endpoints Minimal API, composição, middleware
-├── FaceId.Features/        slices verticais (command, query, handler, endpoint)
-├── FaceId.Domain/          entidades, value objects, regras, portas
-├── FaceId.Infrastructure/  EF Core, MinIO, RabbitMQ, ONNX, assinatura digital
-└── FaceId.Shared/          primitivos sem dependência de domínio
+├── NaHora.Api/             endpoints Minimal API, composição, middleware
+├── NaHora.Features/        slices verticais (command, query, handler, endpoint)
+├── NaHora.Domain/          entidades, value objects, regras, portas
+├── NaHora.Infrastructure/  EF Core, MinIO, RabbitMQ, assinatura digital
+└── NaHora.Shared/          primitivos sem dependência de domínio
 ```
 
 - **Vertical Slice Architecture** + CQRS. Cada slice é autocontido; slices não
@@ -57,7 +57,7 @@ backend/src/
 ### Stack
 
 .NET 10 · ASP.NET Core Minimal API · **WolverineFX** (CQRS + RabbitMQ + outbox) ·
-EF Core 10 + Npgsql · PostgreSQL 17 · MinIO · RabbitMQ · ONNX Runtime ·
+EF Core 10 + Npgsql · PostgreSQL 17 · MinIO · RabbitMQ ·
 OpenCvSharp4 · Serilog · OpenTelemetry · Flutter (Android) + Riverpod + shadcn_ui
 
 ---
@@ -89,7 +89,7 @@ continue explícito.
 | MassTransit v9 | Comercial | Wolverine |
 | FluentAssertions v8+ | Comercial | Shouldly |
 | SixLabors.ImageSharp v3+ | Split License paga | OpenCvSharp4 |
-| InsightFace / ArcFace / SCRFD | Pesos *non-commercial research only* | YuNet + SFace (Apache-2.0) |
+| Tiles de `tile.openstreetmap.org` | Política proíbe uso comercial; acesso pode ser cortado sem aviso | MapTiler (licença comercial) |
 
 Toda nova dependência passa por verificação de licença antes de entrar em
 `Directory.Packages.props`.
@@ -108,7 +108,7 @@ precisa deduzir pela forma:
 | Pattern | Sufixo | Exemplo no projeto |
 |---------|--------|--------------------|
 | Repository | `Repository` | `UserRepository` |
-| Factory | `Factory` | `FaceIdDbContextFactory` |
+| Factory | `Factory` | `NaHoraDbContextFactory` |
 | Strategy | `Strategy` | — |
 | Adapter | `Adapter` | — (ver exceção abaixo) |
 | Decorator | `Decorator` | — |
@@ -149,9 +149,10 @@ lá.
 O app roda no **aparelho do próprio funcionário** — a pessoa com maior interesse
 no resultado do registro. Isso muda o que se pode confiar ao cliente:
 
-- **Nenhuma regra de negócio no app.** Ele detecta que há um rosto bem
-  enquadrado e envia. **Quem** é aquele rosto, se está vivo e se o ponto vale é
-  decidido no servidor, sempre ([ADR-008]).
+- **Nenhuma regra de negócio no app.** Ele captura localização e envia. A hora
+  que vale e a validade do registro são decididas no servidor, sempre.
+- **A hora é a do servidor.** Nunca a do aparelho. Offline, derivada de âncora
+  monotônica — o relógio que mexer na data não afeta ([ADR-010]).
 - **Nada no cliente pode impedir um registro.** Câmera ruim, ML Kit indisponível,
   rede instável: o app degrada e envia assim mesmo. Portaria 671, Art. 78 §1º.
 - **Token só em `flutter_secure_storage`** (Android Keystore). Nunca em
@@ -173,8 +174,8 @@ obriga infraestrutura diferente:
 
 | Fila | Contrato | Durável | Consumo |
 |------|----------|---------|---------|
-| `faceid.audit` | precisa ser registrado | sim | concorrente, uma vez |
-| `faceid.realtime.<instância>` | precisa chegar agora ou não vale nada | não | uma cópia por instância |
+| `nahora.audit` | precisa ser registrado | sim | concorrente, uma vez |
+| `nahora.realtime.<instância>` | precisa chegar agora ou não vale nada | não | uma cópia por instância |
 
 Uma fila compartilhada faz coisas independentes dividirem o mesmo destino: uma
 mensagem envenenada trava a fila e para entregas que nada tinham a ver com ela,
@@ -230,7 +231,7 @@ public static Result<Employee> Hire(...)
 }
 ```
 
-Exceção fica para o genuinamente excepcional: banco fora do ar, modelo ONNX que
+Exceção fica para o genuinamente excepcional: banco fora do ar, arquivo que
 não carrega, bug de referência nula. Essas sobem para o `GlobalExceptionHandler`.
 
 **Na fronteira da API os dois convergem** em `application/problem+json`. O
@@ -277,7 +278,7 @@ que o banco paga.
 ### Registro de ponto
 
 **Falha biométrica nunca impede o registro do ponto.** A Portaria 671/2021,
-Art. 78 §1º, veda ao REP mecanismos que restrinjam a marcação. A biometria
+Art. 78 §1º, veda ao REP mecanismos que restrinjam a marcação. A localização
 classifica a *confiança* do registro (`Verified`, `PendingReview`, `Disputed`,
 `ManualEntry`), nunca a sua existência.
 
@@ -344,7 +345,7 @@ docs/<escopo>-<descricao>        documentação
 perf/<escopo>-<descricao>        performance
 ```
 
-Escopos: `auth`, `company`, `employee`, `schedule`, `biometrics`, `attendance`,
+Escopos: `auth`, `company`, `employee`, `schedule`, `attendance`, `adjustment`,
 `compliance`, `security`, `audit`, `export`, `api`, `web`, `app`, `infra`, `db`.
 
 ### Commits — Conventional Commits, em inglês
@@ -353,7 +354,7 @@ Escopos: `auth`, `company`, `employee`, `schedule`, `biometrics`, `attendance`,
 <tipo>(<escopo>): <descrição imperativa curta>
 ```
 
-Exemplo: `feat(attendance): register attendance with biometric validation`
+Exemplo: `feat(attendance): register a punch with its captured location`
 
 ### Granularidade — um commit por unidade de implementação
 
@@ -368,5 +369,5 @@ usa o prefixo por extenso (`feature/`). São convenções distintas e ambas vale
 
 ### Nunca versionar
 
-Certificados (`.pfx`, `.p12`, `.pem`), `.env`, modelos ONNX, dataset biométrico
+Certificados (`.pfx`, `.p12`, `.pem`), `.env`, chaves de API de mapa
 de teste, arquivos AFD gerados.
