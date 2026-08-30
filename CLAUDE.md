@@ -197,7 +197,7 @@ A distinção fica visível na assinatura da classe, sem precisar abrir mais nad
 
 ```csharp
 public sealed class Employee : AggregateRoot   // carregado e salvo sozinho
-public sealed class FaceEmbedding : Entity     // só alcançado pelo seu root
+public sealed class PunchAdjustment : Entity   // só alcançado pelo seu root
 ```
 
 O que decorre de ser root:
@@ -266,24 +266,32 @@ Leitura para listagem e relatório **não** passa por repositório: projeta dire
 para DTO, porque carregar agregado inteiro para renderizar tabela é desperdício
 que o banco paga.
 
-### Dados biométricos
+### Marcação de ponto
 
-- Embeddings **cifrados em repouso** (AES-256-GCM)
-- **Nunca** expor embedding, `recognitionScore`, `livenessScore` ou threshold em
-  resposta HTTP, WebSocket, log, evento de mensageria ou arquivo exportado
-- Frames processados em memória e descartados; nunca em disco
-- Nenhuma decisão biométrica no cliente — ele captura, envia e exibe o que o
-  servidor mandar
+**Nada impede o registro do ponto.** A Portaria 671/2021, Art. 78 §1º, veda ao
+REP mecanismos que restrinjam a marcação, e isso não abre exceção para suspeita.
+GPS impreciso, localização falsa detectada, relógio do aparelho fora de hora,
+sem rede: em todos os casos a marcação **é gravada** e recebe NSR. O que muda é
+a classificação de confiança (`Trusted`, `Degraded`, `NeedsReview`), nunca a
+existência do registro.
 
-### Registro de ponto
+**A hora que vale é a do servidor.** O cliente não envia horário. A única
+exceção é a marcação que saiu da fila offline, e nesse caso a estimativa é
+aceita **e marcada como estimativa**, com a divergência do relógio do aparelho
+gravada ao lado.
 
-**Falha biométrica nunca impede o registro do ponto.** A Portaria 671/2021,
-Art. 78 §1º, veda ao REP mecanismos que restrinjam a marcação. A localização
-classifica a *confiança* do registro (`Verified`, `PendingReview`, `Disputed`,
-`ManualEntry`), nunca a sua existência.
+**`Punch` é imutável, garantido pelo banco.** Trigger no PostgreSQL rejeita
+`UPDATE` e `DELETE` — não por convenção, porque a aplicação não é a única coisa
+que alcança a tabela. Correção é um **tratamento** vinculado, nunca uma edição:
+o registro original vai assinado no AFD e reescrevê-lo invalidaria a cadeia.
 
-`AttendanceRecord` e `AuditLog` são **append-only**: trigger no PostgreSQL
-rejeita `UPDATE` e `DELETE`.
+**NSR sem lacunas.** Contador por empresa em tabela, incrementado sob `FOR
+UPDATE` na mesma transação da marcação. Sequence do PostgreSQL não serve: não
+sofre rollback, e uma transação abortada deixaria um número gasto.
+
+**Nenhuma coordenada em log, métrica ou mensagem.** Latitude e longitude são
+redigidas pelo `SensitiveDataPolicy` e não viram label de métrica — um par
+funcionário/coordenada diz onde a pessoa estava naquele minuto.
 
 ### Isolamento multiempresa
 
