@@ -1,0 +1,5 @@
+package br.com.faceid
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

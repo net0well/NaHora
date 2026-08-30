@@ -84,12 +84,13 @@ jobs:
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------------
-  # Frontend: analyze, test, and produce the Windows build.
-  # Runs on windows-latest because the desktop target cannot cross-compile.
+  # Frontend: analyze, test, and produce the Android build.
+  # Runs on ubuntu-latest: Android cross-compiles, and the Linux runner is both
+  # faster and cheaper than the Windows one this job used to need.
   # ---------------------------------------------------------------------------
   frontend:
     name: Frontend
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
       run:
@@ -97,6 +98,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+
+      # Gradle needs a JDK, and the runner's default is not guaranteed to be the
+      # one the Android Gradle Plugin supports.
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -119,15 +128,25 @@ jobs:
       - name: Test
         run: flutter test --reporter github
 
-      - name: Build Windows
-        run: flutter build windows --release
+      # Obfuscated, because the release build is obfuscated and an unobfuscated
+      # CI build would not exercise the same path. The symbols are kept as an
+      # artifact: without them a production stack trace is unreadable.
+      - name: Build Android
+        run: flutter build apk --release --obfuscate --split-debug-info=build/symbols
 
-      - name: Upload Windows build
+      - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: faceid-windows
-          path: frontend/faceid/build/windows/x64/runner/Release/
+          name: faceid-android
+          path: frontend/faceid/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 7
+
+      - name: Upload debug symbols
+        uses: actions/upload-artifact@v7
+        with:
+          name: faceid-android-symbols
+          path: frontend/faceid/build/symbols/
+          retention-days: 30
 
   # ---------------------------------------------------------------------------
   # Security. This project stores biometric data, which cannot be rotated after

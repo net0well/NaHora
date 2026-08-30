@@ -58,7 +58,7 @@ backend/src/
 
 .NET 10 · ASP.NET Core Minimal API · **WolverineFX** (CQRS + RabbitMQ + outbox) ·
 EF Core 10 + Npgsql · PostgreSQL 17 · MinIO · RabbitMQ · ONNX Runtime ·
-OpenCvSharp4 · Serilog · OpenTelemetry · Flutter + Riverpod + Material 3
+OpenCvSharp4 · Serilog · OpenTelemetry · Flutter (Android) + Riverpod + shadcn_ui
 
 ---
 
@@ -143,6 +143,27 @@ E a regra que vale mais que a lista: **não usar um pattern para demonstrar que
 o conhece**. Se um `Strategy` tem uma implementação só, é uma interface a mais e
 uma indireção a menos de clareza. O sufixo só entra quando o padrão está mesmo
 lá.
+
+### Alvo Android, e o que isso obriga
+
+O app roda no **aparelho do próprio funcionário** — a pessoa com maior interesse
+no resultado do registro. Isso muda o que se pode confiar ao cliente:
+
+- **Nenhuma regra de negócio no app.** Ele detecta que há um rosto bem
+  enquadrado e envia. **Quem** é aquele rosto, se está vivo e se o ponto vale é
+  decidido no servidor, sempre ([ADR-008]).
+- **Nada no cliente pode impedir um registro.** Câmera ruim, ML Kit indisponível,
+  rede instável: o app degrada e envia assim mesmo. Portaria 671, Art. 78 §1º.
+- **Token só em `flutter_secure_storage`** (Android Keystore). Nunca em
+  `SharedPreferences`, nunca em arquivo.
+- **`allowBackup=false`** e regras de extração vazias: o token não sai do
+  aparelho pelo backup do sistema.
+- **Release sempre com `--obfuscate --split-debug-info`.** Verificável: os nomes
+  das nossas classes não podem aparecer em `strings libapp.so`.
+- **Nenhum frame em disco.** Buffer em memória, descartado ao fim da sessão.
+
+Layout é para **toque e tela pequena**. Uma tabela densa não vira tabela
+encolhida — vira lista ou cartão. `minTapTarget` de 44 é piso, não meta.
 
 ### Uma fila, uma responsabilidade
 
