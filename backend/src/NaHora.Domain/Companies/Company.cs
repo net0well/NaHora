@@ -187,6 +187,27 @@ public sealed class Company : AggregateRoot
         return Result.Success();
     }
 
+    /// <summary>
+    /// The company's UTC offset at a given instant.
+    /// </summary>
+    /// <remarks>
+    /// Resolved for that moment rather than for now, so a punch made before a
+    /// daylight-saving change keeps the offset that was in force when it
+    /// happened.
+    ///
+    /// Falls back to UTC instead of throwing when the identifier is unknown. A
+    /// misconfigured timezone must not stop anyone punching or reading a clock,
+    /// for the same reason nothing else here refuses a record.
+    /// </remarks>
+    public static TimeSpan OffsetAt(string timeZoneId, DateTimeOffset instant) =>
+        TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out var zone)
+            ? zone.GetUtcOffset(instant)
+            : TimeSpan.Zero;
+
+    /// <summary>The calendar day that instant falls on, in company time.</summary>
+    public static DateOnly LocalDateAt(string timeZoneId, DateTimeOffset instant) =>
+        DateOnly.FromDateTime((instant + OffsetAt(timeZoneId, instant)).DateTime);
+
     private static bool IsKnownTimeZone(string timeZoneId) =>
         !string.IsNullOrWhiteSpace(timeZoneId) && TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out _);
 }
