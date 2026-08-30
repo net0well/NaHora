@@ -6,22 +6,33 @@ import 'package:nahora/features/attendance/domain/punch_direction.dart';
 import 'package:nahora/features/attendance/domain/punch_trust.dart';
 import 'package:nahora/features/attendance/presentation/attendance_providers.dart';
 import 'package:nahora/features/home/presentation/employee_tab.dart';
+import 'package:nahora/features/profile/presentation/profile_providers.dart';
 
 import '../../support/fake_attendance_repository.dart';
+import '../../support/fake_profile_repository.dart';
 import '../../support/pump_design_system.dart';
 
 void main() {
   group('EmployeeTab', () {
-    late FakeAttendanceRepository repository;
+    late FakeAttendanceRepository attendance;
+    late FakeProfileRepository profile;
 
     setUp(() {
-      repository = FakeAttendanceRepository();
+      attendance = FakeAttendanceRepository();
+      profile = FakeProfileRepository();
     });
 
     Future<void> pump(WidgetTester tester) => pumpScreen(
       tester,
       const EmployeeTab(),
-      overrides: [attendanceRepositoryProvider.overrideWithValue(repository)],
+
+      // Tall enough that every card is laid out. The tab scrolls on a real
+      // handset; a viewport-sized test would only ever exercise the first card.
+      size: const Size(390, 2400),
+      overrides: [
+        attendanceRepositoryProvider.overrideWithValue(attendance),
+        profileRepositoryProvider.overrideWithValue(profile),
+      ],
     );
 
     testWidgets('Given no punches today, When shown, '
@@ -32,15 +43,14 @@ void main() {
 
       // Assert
       expect(find.byKey(const Key('employee_tab_empty')), findsOneWidget);
-      expect(find.byKey(const Key('employee_tab_list')), findsNothing);
     });
 
     testWidgets(
-      'Given punches today, When shown, Then each one is listed in company time',
+      'Given punches today, When shown, Then each is listed in company time',
       (tester) async {
         // Arrange — the server sends UTC; São Paulo is three hours behind, so
         // 11:05Z has to render as 08:05
-        repository.day = PunchDay(
+        attendance.day = PunchDay(
           localDate: '2026-08-30',
           timeZoneId: 'America/Sao_Paulo',
           nextDirection: PunchDirection.breakStart,
@@ -55,28 +65,8 @@ void main() {
         await pump(tester);
 
         // Assert
-        expect(find.byKey(const Key('employee_tab_list')), findsOneWidget);
+        expect(find.byKey(const Key('punch_entry_1')), findsOneWidget);
         expect(find.text('08:05'), findsOneWidget);
-        expect(find.text('Entrada'), findsOneWidget);
-      },
-    );
-
-    testWidgets(
-      'Given punches today, When shown, Then the next direction is named',
-      (tester) async {
-        // Arrange — the employee should know what the button will record
-        // before pressing it, not after
-        repository.day = PunchDay(
-          localDate: '2026-08-30',
-          timeZoneId: 'America/Sao_Paulo',
-          nextDirection: PunchDirection.breakStart,
-          entries: [FakeAttendanceRepository.entry()],
-        );
-
-        // Act
-        await pump(tester);
-
-        // Assert
         expect(find.text('Próxima: Início do intervalo'), findsOneWidget);
       },
     );
@@ -85,7 +75,7 @@ void main() {
         'Then the reason is written, not only coloured', (tester) async {
       // Arrange — roughly 8% of men cannot separate the tones, and the punch
       // still counts either way
-      repository.day = PunchDay(
+      attendance.day = PunchDay(
         localDate: '2026-08-30',
         timeZoneId: 'America/Sao_Paulo',
         nextDirection: PunchDirection.breakStart,
@@ -104,7 +94,7 @@ void main() {
       (tester) async {
         // Arrange — offline is ordinary, not suspicious: it is what the app
         // does in a basement
-        repository.day = PunchDay(
+        attendance.day = PunchDay(
           localDate: '2026-08-30',
           timeZoneId: 'America/Sao_Paulo',
           nextDirection: PunchDirection.breakStart,
@@ -119,18 +109,93 @@ void main() {
       },
     );
 
-    testWidgets('Given the request fails, When shown, Then it offers a retry', (
-      tester,
-    ) async {
-      // Arrange
-      repository.readFailure = const UnexpectedException();
+    testWidgets(
+      'Given the punch request fails, When shown, Then it offers a retry',
+      (tester) async {
+        // Arrange
+        attendance.readFailure = const UnexpectedException();
 
-      // Act
-      await pump(tester);
+        // Act
+        await pump(tester);
 
-      // Assert
-      expect(find.text('Tentar novamente'), findsOneWidget);
-      expect(find.byKey(const Key('employee_tab_list')), findsNothing);
-    });
+        // Assert
+        expect(find.text('Tentar novamente'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Given the profile loads, When shown, Then the employee record is drawn',
+      (tester) async {
+        // Arrange & Act
+        await pump(tester);
+
+        // Assert
+        expect(find.byKey(const Key('employee_tab_profile')), findsOneWidget);
+        expect(find.text('529.982.247-25'), findsOneWidget);
+        expect(find.text('Operadora'), findsOneWidget);
+        expect(find.text('CLT'), findsOneWidget);
+        expect(find.text('15/01/2026'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Given the company loads, When shown, Then its registration data is drawn',
+      (tester) async {
+        // Arrange & Act
+        await pump(tester);
+
+        // Assert
+        expect(find.byKey(const Key('employee_tab_company')), findsOneWidget);
+        expect(find.text('11.222.333/0001-81'), findsOneWidget);
+        expect(find.text('NaHora Desenvolvimento LTDA'), findsOneWidget);
+        expect(find.text('ISENTO'), findsOneWidget);
+        expect(find.text('CNPJ confirmado'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Given a field the record does not have, When shown, Then no empty row',
+      (tester) async {
+        // Arrange & Act — a company legitimately without a municipal
+        // registration must not read as data somebody should go and fix
+        await pump(tester);
+
+        // Assert
+        expect(find.text('Inscrição municipal'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Given a record missing its PIS, When shown, Then the gap is named',
+      (tester) async {
+        // Arrange — the employee should learn this here, not when an export
+        // leaves them off it
+        profile.employeeProfile = FakeProfileRepository.defaultEmployee(
+          pis: null,
+          isExportableToAfd: false,
+        );
+
+        // Act
+        await pump(tester);
+
+        // Assert
+        expect(find.text('PIS pendente'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Given the profile request fails, When shown, Then both cards offer a retry',
+      (tester) async {
+        // Arrange
+        profile.failure = const UnexpectedException();
+
+        // Act
+        await pump(tester);
+
+        // Assert
+        expect(find.byKey(const Key('employee_tab_profile')), findsNothing);
+        expect(find.text('Tentar novamente'), findsNWidgets(2));
+      },
+    );
   });
 }

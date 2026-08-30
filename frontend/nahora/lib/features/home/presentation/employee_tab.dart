@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../design_system/components/app_badge.dart';
+import '../../../design_system/components/app_badge_tone.dart';
+import '../../../design_system/components/app_card.dart';
+import '../../../design_system/components/app_detail_list.dart';
 import '../../../design_system/components/app_empty_state.dart';
 import '../../../design_system/components/app_error_state.dart';
 import '../../../design_system/components/app_loading.dart';
@@ -12,64 +16,79 @@ import '../../attendance/domain/punch_day.dart';
 import '../../attendance/presentation/attendance_providers.dart';
 import '../../attendance/presentation/punch_entry_formatting.dart';
 import '../../auth/presentation/auth_providers.dart';
+import '../../profile/domain/company_profile.dart';
+import '../../profile/domain/employee_profile.dart';
+import '../../profile/presentation/profile_providers.dart';
 
-/// Who the employee is, and what they have recorded today.
+/// Who the employee is, what they recorded today, and who they work for.
 class EmployeeTab extends ConsumerWidget {
   const EmployeeTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(currentSessionProvider);
-    final day = ref.watch(punchDayProvider);
 
     return SafeArea(
-      child: Padding(
+      child: ListView(
+        key: const Key('employee_tab_scroll'),
         padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Olá,',
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+        children: [
+          Text(
+            'Olá,',
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          Semantics(
+            header: true,
+            child: Text(
+              session?.user.fullName ?? 'Bem-vindo',
+              style: AppTypography.headlineMedium.copyWith(
+                color: AppColors.textPrimary,
               ),
             ),
-            Semantics(
-              header: true,
-              child: Text(
-                session?.user.fullName ?? 'Bem-vindo',
-                style: AppTypography.headlineMedium.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Expanded(
-              child: day.when(
-                loading: () =>
-                    const AppLoading(message: 'Carregando suas marcações'),
-                error: (error, _) => AppErrorState(
-                  message: 'Não foi possível carregar suas marcações de hoje.',
-                  onRetry: () => ref.invalidate(punchDayProvider),
-                ),
-                data: (value) => _Today(day: value),
-              ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const _TodaySection(),
+          const SizedBox(height: AppSpacing.lg),
+          const _EmployeeSection(),
+          const SizedBox(height: AppSpacing.lg),
+          const _CompanySection(),
+        ],
       ),
     );
   }
 }
 
-/// Today's punches, or an honest blank.
-class _Today extends ConsumerWidget {
+/// Today's punches.
+class _TodaySection extends ConsumerWidget {
+  const _TodaySection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final day = ref.watch(punchDayProvider);
+
+    return AppCard(
+      title: 'Hoje',
+      child: day.when(
+        loading: () => const AppLoading(message: 'Carregando suas marcações'),
+        error: (error, _) => AppErrorState(
+          message: 'Não foi possível carregar suas marcações de hoje.',
+          onRetry: () => ref.invalidate(punchDayProvider),
+        ),
+        data: (value) => _Today(day: value),
+      ),
+    );
+  }
+}
+
+class _Today extends StatelessWidget {
   const _Today({required this.day});
 
   final PunchDay day;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     if (day.isEmpty) {
       return const AppEmptyState(
         key: Key('employee_tab_empty'),
@@ -91,26 +110,163 @@ class _Today extends ConsumerWidget {
           style: AppTypography.labelSmall.copyWith(color: AppColors.primary),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Expanded(
-          child: ListView.separated(
-            key: const Key('employee_tab_list'),
-            padding: EdgeInsets.zero,
-            itemCount: day.entries.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              final entry = day.entries[index];
+        for (final entry in day.entries) ...[
+          PunchEntryTile(
+            key: Key('punch_entry_${entry.nsr}'),
+            time: entry.timeLabel,
+            direction: entry.note == null
+                ? entry.direction.label
+                : '${entry.direction.label} · ${entry.note}',
+            tone: entry.tone,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+}
 
-              return PunchEntryTile(
-                time: entry.timeLabel,
-                direction: entry.note == null
-                    ? entry.direction.label
-                    : '${entry.direction.label} · ${entry.note}',
-                tone: entry.tone,
-              );
-            },
+/// The employee's own record.
+class _EmployeeSection extends ConsumerWidget {
+  const _EmployeeSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(employeeProfileProvider);
+
+    return AppCard(
+      title: 'Meus dados',
+      child: profile.when(
+        loading: () => const AppLoading(message: 'Carregando seus dados'),
+        error: (error, _) => AppErrorState(
+          message: 'Não foi possível carregar seus dados.',
+          onRetry: () => ref.invalidate(employeeProfileProvider),
+        ),
+        data: (value) => _EmployeeDetails(profile: value),
+      ),
+    );
+  }
+}
+
+class _EmployeeDetails extends StatelessWidget {
+  const _EmployeeDetails({required this.profile});
+
+  final EmployeeProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const Key('employee_tab_profile'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppDetailList(
+          entries: [
+            AppDetail('Nome', profile.fullName),
+            AppDetail('CPF', profile.cpf),
+            AppDetail('PIS', profile.pis),
+            AppDetail('Matrícula', profile.registration),
+            AppDetail('Cargo', profile.position),
+            AppDetail('Setor', profile.department),
+            AppDetail('Contrato', profile.contractType.label),
+            AppDetail('Situação', profile.status.label),
+            AppDetail('Admissão', _asDate(profile.hiredAt)),
+            AppDetail('Desligamento', _asDate(profile.terminatedAt)),
+            AppDetail('Nascimento', _asDate(profile.birthDate)),
+            AppDetail('E-mail', profile.email),
+            AppDetail('Telefone', profile.phone),
+            AppDetail('Endereço', profile.address?.singleLine),
+          ],
+        ),
+
+        // Surfaced rather than hidden: the employee should learn what is
+        // missing from their own record here, not when an export leaves them
+        // off it.
+        if (!profile.isExportableToAfd) ...[
+          const SizedBox(height: AppSpacing.md),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: AppBadge(label: 'PIS pendente', tone: AppBadgeTone.warning),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// The company recording those hours.
+class _CompanySection extends ConsumerWidget {
+  const _CompanySection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final company = ref.watch(companyProfileProvider);
+
+    return AppCard(
+      title: 'Empresa',
+      child: company.when(
+        loading: () => const AppLoading(message: 'Carregando a empresa'),
+        error: (error, _) => AppErrorState(
+          message: 'Não foi possível carregar os dados da empresa.',
+          onRetry: () => ref.invalidate(companyProfileProvider),
+        ),
+        data: (value) => _CompanyDetails(company: value),
+      ),
+    );
+  }
+}
+
+class _CompanyDetails extends StatelessWidget {
+  const _CompanyDetails({required this.company});
+
+  final CompanyProfile company;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const Key('employee_tab_company'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppDetailList(
+          entries: [
+            AppDetail('Nome fantasia', company.tradeName),
+            AppDetail('Razão social', company.legalName),
+            AppDetail('CNPJ', company.cnpj),
+            AppDetail('Inscrição estadual', company.stateRegistration),
+            AppDetail('Inscrição municipal', company.municipalRegistration),
+            AppDetail('Fundação', _asDate(company.foundedOn)),
+            AppDetail('E-mail', company.email),
+            AppDetail('Telefone', company.phone),
+            AppDetail('Endereço', company.address.singleLine),
+            AppDetail('Fuso horário', company.timeZoneId),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        // Left-aligned rather than stretched: a badge sizes to its label, and
+        // a full-width one reads as a banner.
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppBadge(
+            label: company.registryVerified
+                ? 'CNPJ confirmado'
+                : 'CNPJ não confirmado',
+            tone: company.registryVerified
+                ? AppBadgeTone.success
+                : AppBadgeTone.neutral,
           ),
         ),
       ],
     );
   }
+}
+
+/// "2026-08-30" as "30/08/2026".
+String? _asDate(String? isoDate) {
+  if (isoDate == null) {
+    return null;
+  }
+
+  final parts = isoDate.split('-');
+
+  return parts.length == 3 ? '${parts[2]}/${parts[1]}/${parts[0]}' : isoDate;
 }
