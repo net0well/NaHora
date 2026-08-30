@@ -67,22 +67,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   // The mark carries the name, so there is no separate title.
                   // Printing "NaHora" underneath would say it twice.
                   //
-                  // Rounded because the artwork has its own opaque, darker
-                  // ground: left square it reads as a mismatched block over the
-                  // page, and as a deliberate tile once the corners are cut.
+                  // The asset is transparent and trimmed to what is drawn, so
+                  // it sits on the page rather than on a block of its own —
+                  // see tool/make_transparent_logo.py.
                   Semantics(
                     header: true,
                     label: 'NaHora',
                     child: ExcludeSemantics(
                       child: Center(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          child: Image.asset(
-                            'assets/images/nahora-logo.png',
-                            key: const Key('login_logo'),
-                            height: 180,
-                            fit: BoxFit.contain,
-                          ),
+                        child: Image.asset(
+                          'assets/images/nahora-logo.png',
+                          key: const Key('login_logo'),
+                          height: 240,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
