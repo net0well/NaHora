@@ -7,12 +7,12 @@ namespace NaHora.Api.Observability;
 /// Names and instruments for the application's own telemetry.
 /// </summary>
 /// <remarks>
-/// The biometric pipeline gets a span per stage, which is what answers "which
-/// stage consumed the 1200 ms budget" without anyone instrumenting by hand.
-///
-/// No instrument ever carries a score, as a value or as a label. Only the
-/// resulting classification, which is low cardinality and is not sensitive
-/// data.
+/// No instrument ever carries a coordinate, as a value or as a label. A metric
+/// label is a cardinality problem and a privacy problem at the same time:
+/// latitude and longitude are unique per punch and would identify where a named
+/// employee was at a given minute. What is tagged is the classification —
+/// accuracy band, origin, whether the location was mocked — which is low
+/// cardinality and tells the operator what they actually need.
 /// </remarks>
 public static class NaHoraTelemetry
 {
@@ -23,27 +23,15 @@ public static class NaHoraTelemetry
 
     public static readonly Meter Meter = new(ServiceName);
 
-    /// <summary>Stage names used as span names inside the biometric pipeline.</summary>
-    public static class BiometricStages
-    {
-        public const string Detection = "biometrics.detection";
-        public const string Quality = "biometrics.quality";
-        public const string Alignment = "biometrics.alignment";
-        public const string Liveness = "biometrics.liveness";
-        public const string Embedding = "biometrics.embedding";
-        public const string Similarity = "biometrics.similarity";
-        public const string Decision = "biometrics.decision";
-    }
-
     /// <summary>
-    /// Attendance records by confidence. Deliberately the classification and
-    /// not the score behind it.
+    /// Punches recorded, tagged by origin and by whether the location looked
+    /// trustworthy. Never by coordinate.
     /// </summary>
     public static readonly Counter<long> AttendanceRecorded =
         Meter.CreateCounter<long>(
             "nahora.attendance.recorded",
             unit: "{record}",
-            description: "Attendance records created, tagged by confidence.");
+            description: "Punches recorded, tagged by origin and location trust.");
 
     public static readonly Counter<long> SecurityEvents =
         Meter.CreateCounter<long>(
@@ -58,12 +46,16 @@ public static class NaHoraTelemetry
             description: "Sign-in attempts, tagged by outcome.");
 
     /// <summary>
-    /// Latency of one biometric stage. The histogram is what turns the p95
-    /// budget into something observable rather than aspirational.
+    /// How long a punch waited in the device queue before reaching the server.
     /// </summary>
-    public static readonly Histogram<double> BiometricStageDuration =
+    /// <remarks>
+    /// The number that says whether offline mode is working. A distribution
+    /// creeping upwards means punches are sitting on phones — which is data at
+    /// risk of being lost with the device, not merely a latency figure.
+    /// </remarks>
+    public static readonly Histogram<double> OfflineQueueDelay =
         Meter.CreateHistogram<double>(
-            "nahora.biometrics.stage.duration",
-            unit: "ms",
-            description: "Duration of a single biometric pipeline stage.");
+            "nahora.attendance.offline_queue_delay",
+            unit: "s",
+            description: "Seconds between a punch occurring and reaching the server.");
 }

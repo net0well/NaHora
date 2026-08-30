@@ -10,7 +10,8 @@ namespace NaHora.Api.Observability;
 /// <remarks>
 /// Enforced as a Serilog policy rather than left to whoever writes the log
 /// statement. Discipline fails exactly once and the failure is silent — and for
-/// biometric data the failure is permanent, because a leaked face cannot be
+/// location history it is a record of where a named person has been, which is
+/// personal data under the LGPD and cannot be
 /// rotated the way a password can.
 ///
 /// This runs on destructured objects. A value interpolated into a message
@@ -30,14 +31,14 @@ internal sealed class SensitiveDataPolicy : IDestructuringPolicy
         "privatekey",
         "signature",
 
-        // Biometric material and the numbers that would let an attacker tune an
-        // attack against it.
-        "embedding",
-        "vector",
-        "recognitionscore",
-        "livenessscore",
-        "qualityscore",
-        "threshold"
+        // Location. Not a credential, but personal data all the same: a log
+        // line pairing an employee with a coordinate says where that person
+        // was at that minute, and logs are copied, shipped and kept far longer
+        // than anyone intends.
+        "latitude",
+        "longitude",
+        "coordinate",
+        "geolocation"
     ];
 
     private static readonly ConcurrentDictionary<Type, PropertyPlan[]> Plans = new();
