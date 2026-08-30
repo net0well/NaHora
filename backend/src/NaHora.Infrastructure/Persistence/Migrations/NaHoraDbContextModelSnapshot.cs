@@ -489,6 +489,71 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                     b.ToTable("employees", (string)null);
                 });
 
+            modelBuilder.Entity("NaHora.Domain.Scheduling.CompanyWorkSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_company_work_schedules");
+
+                    b.HasIndex("CompanyId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_company_work_schedules_company");
+
+                    b.ToTable("company_work_schedules", (string)null);
+                });
+
+            modelBuilder.Entity("NaHora.Domain.Scheduling.EmployeeWorkSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_employee_work_schedules");
+
+                    b.HasIndex("EmployeeId", "EffectiveFrom")
+                        .HasDatabaseName("ix_employee_work_schedules_employee_effective_from");
+
+                    b.ToTable("employee_work_schedules", (string)null);
+                });
+
             modelBuilder.Entity("NaHora.Domain.Users.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -876,6 +941,90 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Address");
+                });
+
+            modelBuilder.Entity("NaHora.Domain.Scheduling.CompanyWorkSchedule", b =>
+                {
+                    b.OwnsMany("NaHora.Domain.Scheduling.WorkDaySchedule", "Days", b1 =>
+                        {
+                            b1.Property<Guid>("company_work_schedule_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("company_work_schedule_id");
+
+                            b1.Property<string>("Day")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("day_of_week");
+
+                            b1.Property<TimeOnly?>("EndTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("end_time");
+
+                            b1.Property<TimeOnly?>("LunchEndTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("lunch_end_time");
+
+                            b1.Property<TimeOnly?>("LunchStartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("lunch_start_time");
+
+                            b1.Property<TimeOnly?>("StartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("start_time");
+
+                            b1.HasKey("company_work_schedule_id", "Day")
+                                .HasName("p_k_company_work_schedule_days");
+
+                            b1.ToTable("company_work_schedule_days", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("company_work_schedule_id")
+                                .HasConstraintName("f_k_company_work_schedule_days_company_work_schedules_company_w~");
+                        });
+
+                    b.Navigation("Days");
+                });
+
+            modelBuilder.Entity("NaHora.Domain.Scheduling.EmployeeWorkSchedule", b =>
+                {
+                    b.OwnsMany("NaHora.Domain.Scheduling.WorkDaySchedule", "Days", b1 =>
+                        {
+                            b1.Property<Guid>("employee_work_schedule_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("employee_work_schedule_id");
+
+                            b1.Property<string>("Day")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("day_of_week");
+
+                            b1.Property<TimeOnly?>("EndTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("end_time");
+
+                            b1.Property<TimeOnly?>("LunchEndTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("lunch_end_time");
+
+                            b1.Property<TimeOnly?>("LunchStartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("lunch_start_time");
+
+                            b1.Property<TimeOnly?>("StartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("start_time");
+
+                            b1.HasKey("employee_work_schedule_id", "Day")
+                                .HasName("p_k_employee_work_schedule_days");
+
+                            b1.ToTable("employee_work_schedule_days", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("employee_work_schedule_id")
+                                .HasConstraintName("f_k_employee_work_schedule_days_employee_work_schedules_employe~");
+                        });
+
+                    b.Navigation("Days");
                 });
 
             modelBuilder.Entity("NaHora.Domain.Users.RefreshToken", b =>

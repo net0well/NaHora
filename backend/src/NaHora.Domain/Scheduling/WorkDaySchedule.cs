@@ -1,3 +1,4 @@
+using System.Globalization;
 using NaHora.Domain.Errors;
 using NaHora.Shared.Results;
 
@@ -154,6 +155,11 @@ public sealed record WorkDaySchedule
     }
 
     /// <summary>"08:00 às 17:00, com 1h de intervalo"</summary>
+    /// <remarks>
+    /// Invariant culture for the clock, Portuguese for the words. The hours
+    /// must read the same wherever the server runs; the sentence around them is
+    /// user-facing text.
+    /// </remarks>
     public string Describe()
     {
         if (!IsWorkday)
@@ -161,7 +167,9 @@ public sealed record WorkDaySchedule
             return "Sem expediente";
         }
 
-        var hours = $"{StartTime:HH\\:mm} às {EndTime:HH\\:mm}";
+        var hours = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{StartTime:HH:mm} às {EndTime:HH:mm}");
 
         return HasLunch ? $"{hours}, com {DescribeLunch()} de intervalo" : hours;
     }
@@ -172,9 +180,11 @@ public sealed record WorkDaySchedule
 
         if (minutes % 60 == 0)
         {
-            return $"{minutes / 60}h";
+            return string.Create(CultureInfo.InvariantCulture, $"{minutes / 60}h");
         }
 
-        return minutes < 60 ? $"{minutes}min" : $"{minutes / 60}h{minutes % 60:00}";
+        return minutes < 60
+            ? string.Create(CultureInfo.InvariantCulture, $"{minutes}min")
+            : string.Create(CultureInfo.InvariantCulture, $"{minutes / 60}h{minutes % 60:00}");
     }
 }
