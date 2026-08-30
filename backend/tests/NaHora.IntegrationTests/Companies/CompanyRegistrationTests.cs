@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using NaHora.Domain.Companies;
 using NaHora.IntegrationTests.Fixtures;
 
 namespace NaHora.IntegrationTests.Companies;
@@ -14,14 +15,21 @@ namespace NaHora.IntegrationTests.Companies;
 /// message actually arrives. A unit test on the handler would have passed while
 /// every real request returned 500.
 /// </remarks>
-public sealed class CompanyRegistrationTests(ApiFixture fixture) : IClassFixture<ApiFixture>
+public sealed class CompanyRegistrationTests(ApiFixture fixture) : IClassFixture<ApiFixture>, IDisposable
 {
     private readonly HttpClient _client = fixture.CreateClient();
+
+    /// <summary>Leaves the registry answering what the other tests expect.</summary>
+    public void Dispose() =>
+        StubCompanyRegistryLookup.NextResult = CompanyRegistryResult.Unavailable();
 
     [Fact]
     public async Task Register_WithACompletePayload_CreatesTheCompanyAndItsAdministrator()
     {
-        // Arrange
+        // Arrange — the registry confirms it
+        StubCompanyRegistryLookup.NextResult =
+            CompanyRegistryResult.Found("Segunda Empresa Comercio LTDA", "Segunda", isActive: true);
+
         var cnpj = DocumentFactory.NewCnpj();
         var cpf = DocumentFactory.NewCpf();
 
@@ -40,6 +48,40 @@ public sealed class CompanyRegistrationTests(ApiFixture fixture) : IClassFixture
         // Active rather than pending: this is an operator action through the
         // API, and there is nobody to confirm an address to.
         body.GetProperty("status").GetString().ShouldBe("Active");
+        body.GetProperty("registryVerified").GetBoolean().ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Register_WhenTheRegistrySaysTheCnpjDoesNotExist_IsRefused()
+    {
+        // Arrange — conclusive, so retrying would not change the answer
+        StubCompanyRegistryLookup.NextResult = CompanyRegistryResult.NotFound();
+
+        // Act
+        var response = await PostAsync(NewBody(DocumentFactory.NewCnpj(), DocumentFactory.NewCpf()));
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))
+            .ShouldContain("CNPJ_NOT_FOUND_IN_REGISTRY");
+    }
+
+    [Fact]
+    public async Task Register_WhenTheRegistryCannotBeReached_ProceedsUnverified()
+    {
+        // Arrange — an outage on their side must not stop a customer signing
+        // up, and it must not be recorded as a verification either
+        StubCompanyRegistryLookup.NextResult = CompanyRegistryResult.Unavailable();
+
+        // Act
+        var response = await PostAsync(NewBody(DocumentFactory.NewCnpj(), DocumentFactory.NewCpf()));
+
+        // Assert
+        var raw = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.Created, raw);
+        JsonDocument.Parse(raw).RootElement
+            .GetProperty("registryVerified").GetBoolean()
+            .ShouldBeFalse("unreachable is not the same as confirmed");
     }
 
     [Fact]

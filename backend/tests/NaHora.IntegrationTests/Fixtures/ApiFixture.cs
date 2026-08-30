@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using NaHora.Api.Development;
+using NaHora.Domain.Companies;
 using NaHora.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -60,6 +61,13 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             // this host loads. A shared company appearing in every test makes
             // counts depend on execution order. Configured last, so it wins.
             services.Configure<DevelopmentSeedOptions>(options => options.Enabled = false);
+
+            // The real lookup calls BrasilAPI. Left in place, whether a
+            // registration test passes depends on whether the runner has
+            // internet — the CNPJs these tests generate are valid in shape and
+            // belong to nobody.
+            services.RemoveAll<ICompanyRegistryLookup>();
+            services.AddScoped<ICompanyRegistryLookup, StubCompanyRegistryLookup>();
         });
     }
 
