@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using NaHora.Domain.Abstractions;
+using NaHora.Domain.Attendance;
 using NaHora.Domain.Companies;
 using NaHora.Domain.Employees;
 using NaHora.Domain.Users;
@@ -23,6 +24,15 @@ public sealed class NaHoraDbContext(
     public DbSet<Employee> Employees => Set<Employee>();
 
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    public DbSet<Punch> Punches => Set<Punch>();
+
+    /// <summary>
+    /// NSR counters. Not tenant-filtered: the counter is read by primary key
+    /// under a lock inside the punch transaction, and a global filter would add
+    /// a predicate to a query whose whole purpose is to lock one known row.
+    /// </summary>
+    public DbSet<CompanyNsrCounter> NsrCounters => Set<CompanyNsrCounter>();
 
     /// <summary>
     /// Read by the global query filter on every query. EF re-evaluates it per

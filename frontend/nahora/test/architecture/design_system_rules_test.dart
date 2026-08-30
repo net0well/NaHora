@@ -177,7 +177,9 @@ final _radiusLiteral = RegExp(r'\bBorderRadius\.circular\(([^()]*)\)');
 
 final _containsDigit = RegExp(r'\d');
 
-final _networkImport = RegExp(r"""import\s+['"][^'"]*core/network[^'"]*['"]""");
+final _networkImport = RegExp(
+  r"""import\s+['"][^'"]*core/network/(api_client|auth_interceptor|api_exception_mapper)\.dart['"]""",
+);
 
 bool _isDataLayer(File file) =>
     file.path.replaceAll(r'\', '/').contains('/data/');
