@@ -19,7 +19,11 @@ class AppBadge extends StatelessWidget {
     this.tone = AppBadgeTone.neutral,
   });
 
+  /// Two or three words. A badge lays its content out in a row that does not
+  /// wrap, so a sentence here runs past the edge on a phone — the explanation
+  /// belongs in the text around it.
   final String label;
+
   final AppBadgeTone tone;
 
   @override

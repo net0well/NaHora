@@ -60,11 +60,13 @@ class AppErrorState extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: AppSpacing.lg),
+              // No icon. This state is used inside cards, where the label
+              // plus an icon is wider than the space a phone leaves, and the
+              // button then runs past the edge of the card.
               AppButton(
                 label: retryLabel,
                 onPressed: onRetry,
                 variant: AppButtonVariant.secondary,
-                icon: Icons.refresh,
               ),
             ],
           ],
