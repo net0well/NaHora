@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'punch_action_button.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -17,8 +18,8 @@ class AppTabShell extends StatelessWidget {
     required this.currentTab,
     required this.onTabSelected,
     required this.onPrimaryAction,
-    required this.primaryIcon,
     super.key,
+    this.primaryTime,
     this.isPrimaryBusy = false,
   });
 
@@ -26,7 +27,13 @@ class AppTabShell extends StatelessWidget {
   final AppTab currentTab;
   final ValueChanged<AppTab> onTabSelected;
   final VoidCallback? onPrimaryAction;
-  final IconData primaryIcon;
+
+  /// The official time the raised action shows on its face.
+  ///
+  /// Null leaves the clock without hands rather than falling back to the
+  /// device, which is the one thing this product must never display.
+  final DateTime? primaryTime;
+
   final bool isPrimaryBusy;
 
   /// How far the raised action rises above the bar.
@@ -54,7 +61,7 @@ class AppTabShell extends StatelessWidget {
               currentTab: currentTab,
               onTabSelected: onTabSelected,
               onPrimaryAction: onPrimaryAction,
-              primaryIcon: primaryIcon,
+              primaryTime: primaryTime,
               isPrimaryBusy: isPrimaryBusy,
             ),
           ),
@@ -80,14 +87,14 @@ class _Bar extends StatelessWidget {
     required this.currentTab,
     required this.onTabSelected,
     required this.onPrimaryAction,
-    required this.primaryIcon,
+    required this.primaryTime,
     required this.isPrimaryBusy,
   });
 
   final AppTab currentTab;
   final ValueChanged<AppTab> onTabSelected;
   final VoidCallback? onPrimaryAction;
-  final IconData primaryIcon;
+  final DateTime? primaryTime;
   final bool isPrimaryBusy;
 
   @override
@@ -130,9 +137,10 @@ class _Bar extends StatelessWidget {
           ),
           Positioned(
             bottom: AppTabShell._barHeight - AppTabShell._actionSize / 2,
-            child: _PrimaryAction(
-              icon: primaryIcon,
+            child: PunchActionButton(
+              time: primaryTime,
               onPressed: onPrimaryAction,
+              size: AppTabShell._actionSize,
               isBusy: isPrimaryBusy,
             ),
           ),
@@ -179,56 +187,6 @@ class _Tab extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The raised action in the middle of the bar.
-class _PrimaryAction extends StatelessWidget {
-  const _PrimaryAction({
-    required this.icon,
-    required this.onPressed,
-    required this.isBusy,
-  });
-
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final bool isBusy;
-
-  bool get _isEnabled => onPressed != null && !isBusy;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      enabled: _isEnabled,
-      label: 'Marcar ponto',
-      child: ExcludeSemantics(
-        child: Material(
-          color: _isEnabled
-              ? AppColors.primary
-              : AppColors.primary.withValues(alpha: 0.45),
-          shape: const CircleBorder(),
-          elevation: 6,
-          shadowColor: const Color(0xB3000000),
-          child: InkWell(
-            onTap: _isEnabled ? onPressed : null,
-            customBorder: const CircleBorder(),
-            child: SizedBox.square(
-              dimension: AppTabShell._actionSize,
-              child: isBusy
-                  ? const Padding(
-                      padding: EdgeInsets.all(AppSpacing.lg),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.6,
-                        color: AppColors.onPrimary,
-                      ),
-                    )
-                  : Icon(icon, size: 34, color: AppColors.onPrimary),
-            ),
           ),
         ),
       ),
