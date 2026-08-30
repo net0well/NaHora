@@ -128,10 +128,11 @@ public sealed class PunchListingTests(ApiFixture fixture) : IClassFixture<ApiFix
         // Act
         var response = await GetAsync("/api/v1/punches/me", token);
 
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.UnprocessableEntity);
-        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))
-            .ShouldContain("EMPLOYEE_REQUIRED");
+        // Assert — 403, not 422: the request is well formed and the caller is
+        // simply not the kind of person this endpoint is for
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden, body);
+        body.ShouldContain("EMPLOYEE_RECORD_REQUIRED");
     }
 
     [Fact]
