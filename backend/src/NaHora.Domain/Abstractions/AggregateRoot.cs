@@ -10,7 +10,7 @@ namespace NaHora.Domain.Abstractions;
 ///
 /// <code>
 /// public sealed class Employee : AggregateRoot   // loaded and saved on its own
-/// public sealed class FaceEmbedding : Entity     // only ever reached through its root
+/// public sealed class PunchAdjustment : Entity   // only ever reached through its root
 /// </code>
 ///
 /// What follows from being a root:

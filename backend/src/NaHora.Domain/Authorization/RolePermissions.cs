@@ -16,7 +16,6 @@ public static class RolePermissions
     [
         Permissions.ViewOwnAttendance,
         Permissions.RegisterAttendance,
-        Permissions.ManageOwnFaceProfile
     ];
 
     private static readonly string[] ManagerPermissions =
@@ -26,6 +25,7 @@ public static class RolePermissions
         Permissions.ManageEmployees,
         Permissions.ManageSchedules,
         Permissions.ViewAllAttendance,
+        Permissions.AdjustAttendance,
         Permissions.ViewSecurityEvents,
         Permissions.ReviewSecurityEvents,
         Permissions.ViewEvidence,
@@ -39,7 +39,6 @@ public static class RolePermissions
         Permissions.ViewAudit,
         Permissions.ManageCompany,
         Permissions.ManageRetentionPolicy,
-        Permissions.ResetEmployeeFaceProfile
     ];
 
     public static IReadOnlyList<string> For(UserRole role) => role switch

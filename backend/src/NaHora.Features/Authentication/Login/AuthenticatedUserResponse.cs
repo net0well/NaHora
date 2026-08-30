@@ -4,7 +4,7 @@ namespace NaHora.Features.Authentication.Login;
 /// The signed-in user, as the client needs them.
 /// </summary>
 /// <remarks>
-/// Carries no CPF, no password hash and no biometric data — only what the UI
+/// Carries no CPF and no password hash — only what the UI
 /// renders and what it uses to decide which controls to show.
 /// </remarks>
 public sealed record AuthenticatedUserResponse(

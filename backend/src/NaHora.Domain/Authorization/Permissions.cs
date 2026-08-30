@@ -11,12 +11,17 @@ public static class Permissions
 {
     public const string ViewOwnAttendance = "attendance:view-own";
     public const string RegisterAttendance = "attendance:register";
-    public const string ManageOwnFaceProfile = "face-profile:manage-own";
 
     public const string ViewEmployees = "employees:view";
     public const string ManageEmployees = "employees:manage";
     public const string ManageSchedules = "schedules:manage";
     public const string ViewAllAttendance = "attendance:view-all";
+
+    /// <summary>
+    /// Correct a punch. Never granted to the employee whose punch it is: the
+    /// most obvious conflict of interest in the domain.
+    /// </summary>
+    public const string AdjustAttendance = "attendance:adjust";
 
     public const string ViewSecurityEvents = "security-events:view";
     public const string ReviewSecurityEvents = "security-events:review";
@@ -28,18 +33,17 @@ public static class Permissions
 
     public const string ManageCompany = "company:manage";
     public const string ManageRetentionPolicy = "retention-policy:manage";
-    public const string ResetEmployeeFaceProfile = "face-profile:reset";
 
     /// <summary>Used to register one authorisation policy per permission.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
         ViewOwnAttendance,
         RegisterAttendance,
-        ManageOwnFaceProfile,
         ViewEmployees,
         ManageEmployees,
         ManageSchedules,
         ViewAllAttendance,
+        AdjustAttendance,
         ViewSecurityEvents,
         ReviewSecurityEvents,
         ViewEvidence,
@@ -47,7 +51,6 @@ public static class Permissions
         GenerateAfd,
         ViewAudit,
         ManageCompany,
-        ManageRetentionPolicy,
-        ResetEmployeeFaceProfile
+        ManageRetentionPolicy
     ];
 }

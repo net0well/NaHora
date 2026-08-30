@@ -223,11 +223,12 @@ public static class LoginHandler
             actions.Add(PendingAction.ChangePassword);
         }
 
-        // An employee has to enrol a face before punching. Somebody without an
-        // employment record never punches, so it does not apply.
+        // Location permission is only outstanding for someone who actually
+        // punches. An administrator without an employment record never does,
+        // so asking them for it would be a prompt with no purpose.
         if (employee is not null)
         {
-            actions.Add(PendingAction.RegisterFaceProfile);
+            actions.Add(PendingAction.GrantLocationPermission);
         }
 
         return actions;

@@ -7,7 +7,7 @@ public enum UserStatus
 {
     /// <summary>
     /// Authenticates successfully, but onboarding is incomplete: the password
-    /// was set by someone else, or the face profile is missing. Sign-in has to
+    /// was set by someone else. Sign-in has to
     /// succeed, otherwise there would be no credential to complete onboarding
     /// with.
     /// </summary>

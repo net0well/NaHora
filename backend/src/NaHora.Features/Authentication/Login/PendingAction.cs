@@ -11,5 +11,15 @@ namespace NaHora.Features.Authentication.Login;
 public static class PendingAction
 {
     public const string ChangePassword = "ChangePassword";
-    public const string RegisterFaceProfile = "RegisterFaceProfile";
+
+    /// <summary>
+    /// The app has no location permission yet, so it cannot punch.
+    /// </summary>
+    /// <remarks>
+    /// Reported by the server as an outstanding action so the client shows the
+    /// explanation screen before the system dialog. A permission prompt with no
+    /// context is denied by reflex, and recovering from that means walking the
+    /// employee through Android settings.
+    /// </remarks>
+    public const string GrantLocationPermission = "GrantLocationPermission";
 }
