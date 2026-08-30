@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../design_system/components/app_badge.dart';
 import '../../../design_system/components/app_badge_tone.dart';
+import '../../../design_system/components/app_button.dart';
+import '../../../design_system/components/app_button_variant.dart';
 import '../../../design_system/components/app_card.dart';
 import '../../../design_system/components/app_detail_list.dart';
 import '../../../design_system/components/app_empty_state.dart';
@@ -54,6 +56,8 @@ class EmployeeTab extends ConsumerWidget {
           const _EmployeeSection(),
           const SizedBox(height: AppSpacing.lg),
           const _CompanySection(),
+          const SizedBox(height: AppSpacing.lg),
+          const _SignOut(),
         ],
       ),
     );
@@ -256,6 +260,26 @@ class _CompanyDetails extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Leaving the app.
+///
+/// At the end of the scroll rather than in the header: signing out is rare and
+/// destructive-feeling, and a control the thumb reaches by accident next to the
+/// punch action is the wrong trade.
+class _SignOut extends ConsumerWidget {
+  const _SignOut();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return AppButton(
+      key: const Key('employee_tab_sign_out'),
+      label: 'Sair',
+      variant: AppButtonVariant.secondary,
+      expanded: true,
+      onPressed: () => ref.read(authControllerProvider.notifier).signOut(),
     );
   }
 }

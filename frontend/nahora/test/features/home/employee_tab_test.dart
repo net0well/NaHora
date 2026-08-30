@@ -184,6 +184,18 @@ void main() {
     );
 
     testWidgets(
+      'Given the screen, When rendered, Then there is a way out of the app',
+      (tester) async {
+        // Arrange & Act — an app somebody cannot sign out of is an app that
+        // hands the next person their colleague's record
+        await pump(tester);
+
+        // Assert
+        expect(find.byKey(const Key('employee_tab_sign_out')), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'Given the profile request fails, When shown, Then both cards offer a retry',
       (tester) async {
         // Arrange
