@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'app_colors.dart';
+import 'app_radius.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
 
+/// Builds the themes both widget libraries read.
+///
+/// The tokens are the source of truth and the libraries are fed from them, not
+/// the other way round. That is what keeps the choice of component library
+/// reversible: replacing it changes what [shad] returns, not what any screen
+/// looks like.
 abstract final class AppTheme {
   static ThemeData light() {
     final colorScheme =
@@ -77,6 +85,40 @@ abstract final class AppTheme {
         thickness: 1,
         space: 1,
       ),
+    );
+  }
+
+  /// The component library's theme, built from the same tokens.
+  ///
+  /// Every colour here is a token. A value invented at this layer would be a
+  /// second source of truth, and two sources of truth for colour produce the
+  /// worst possible outcome: an interface that is almost consistent.
+  static ShadThemeData shad() {
+    return ShadThemeData(
+      brightness: Brightness.light,
+      colorScheme: const ShadColorScheme(
+        background: AppColors.surfaceMuted,
+        foreground: AppColors.textPrimary,
+        card: AppColors.surface,
+        cardForeground: AppColors.textPrimary,
+        popover: AppColors.surface,
+        popoverForeground: AppColors.textPrimary,
+        primary: AppColors.primary,
+        primaryForeground: AppColors.surface,
+        secondary: AppColors.surfaceMuted,
+        secondaryForeground: AppColors.textPrimary,
+        muted: AppColors.surfaceMuted,
+        mutedForeground: AppColors.textSecondary,
+        accent: AppColors.primaryLight,
+        accentForeground: AppColors.primaryDark,
+        destructive: AppColors.danger,
+        destructiveForeground: AppColors.surface,
+        border: AppColors.border,
+        input: AppColors.border,
+        ring: AppColors.primary,
+        selection: AppColors.primaryLight,
+      ),
+      radius: BorderRadius.all(Radius.circular(AppRadius.sm)),
     );
   }
 }

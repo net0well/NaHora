@@ -44,9 +44,9 @@ auditável. É o oposto de um sistema que apaga a prova de que alguém trabalhou
 
 ```
 ┌─────────────────────┐
-│  Flutter (Windows)  │  captura, exibe estado, nunca decide
-└──────────┬──────────┘
-           │ HTTPS + WebSocket
+│  Flutter (Android)  │  captura, orienta o enquadramento,
+└──────────┬──────────┘  nunca decide quem é
+           │ HTTPS + SSE
            ▼
 ┌─────────────────────┐
 │  ASP.NET Core 10    │  Minimal API · Vertical Slice · CQRS
@@ -131,11 +131,18 @@ entrar no `Directory.Packages.props`.
 |------------|--------|------------|
 | .NET SDK | 10.0.400+ | |
 | Flutter | 3.47+ | Canal stable |
-| Visual Studio 2022/2026 | — | Workload **Desenvolvimento para desktop com C++** |
-| Docker Desktop | 29+ | |
+| Android SDK | API 36 | Com *command-line tools* e licenças aceitas |
+| JDK | 17 | Exigido pelo Gradle |
+| Docker Desktop | 29+ | Para os testes de integração do backend |
 
-O workload C++ não é opcional: `flutter build windows` depende do MSVC, do
-Windows SDK e do CMake que ele instala.
+As licenças do Android precisam ser aceitas uma vez:
+
+```bash
+flutter doctor --android-licenses
+```
+
+Sem elas o `flutter build apk` falha, e a mensagem não diz que o motivo é
+licença.
 
 ---
 
@@ -182,8 +189,11 @@ cd backend && dotnet run --project src/FaceId.Api
 ### 3. Frontend
 
 ```bash
-cd frontend/faceid && flutter run -d windows
+cd frontend/faceid && flutter run -d android
 ```
+
+Com um aparelho conectado por USB (depuração USB ligada) ou um emulador aberto.
+`flutter devices` lista o que está disponível.
 
 ---
 
