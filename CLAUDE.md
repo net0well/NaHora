@@ -1,4 +1,4 @@
-# FaceId — Convenções do Projeto
+# NaHora — Convenções do Projeto
 
 Plataforma de controle de ponto com reconhecimento facial, anti-fraude e
 conformidade com a Portaria MTP 671/2021 (REP-P).
@@ -41,11 +41,11 @@ tarefa:
 
 ```
 backend/src/
-├── FaceId.Api/             endpoints Minimal API, composição, middleware
-├── FaceId.Features/        slices verticais (command, query, handler, endpoint)
-├── FaceId.Domain/          entidades, value objects, regras, portas
-├── FaceId.Infrastructure/  EF Core, MinIO, RabbitMQ, ONNX, assinatura digital
-└── FaceId.Shared/          primitivos sem dependência de domínio
+├── NaHora.Api/             endpoints Minimal API, composição, middleware
+├── NaHora.Features/        slices verticais (command, query, handler, endpoint)
+├── NaHora.Domain/          entidades, value objects, regras, portas
+├── NaHora.Infrastructure/  EF Core, MinIO, RabbitMQ, ONNX, assinatura digital
+└── NaHora.Shared/          primitivos sem dependência de domínio
 ```
 
 - **Vertical Slice Architecture** + CQRS. Cada slice é autocontido; slices não
@@ -108,7 +108,7 @@ precisa deduzir pela forma:
 | Pattern | Sufixo | Exemplo no projeto |
 |---------|--------|--------------------|
 | Repository | `Repository` | `UserRepository` |
-| Factory | `Factory` | `FaceIdDbContextFactory` |
+| Factory | `Factory` | `NaHoraDbContextFactory` |
 | Strategy | `Strategy` | — |
 | Adapter | `Adapter` | — (ver exceção abaixo) |
 | Decorator | `Decorator` | — |
@@ -173,8 +173,8 @@ obriga infraestrutura diferente:
 
 | Fila | Contrato | Durável | Consumo |
 |------|----------|---------|---------|
-| `faceid.audit` | precisa ser registrado | sim | concorrente, uma vez |
-| `faceid.realtime.<instância>` | precisa chegar agora ou não vale nada | não | uma cópia por instância |
+| `nahora.audit` | precisa ser registrado | sim | concorrente, uma vez |
+| `nahora.realtime.<instância>` | precisa chegar agora ou não vale nada | não | uma cópia por instância |
 
 Uma fila compartilhada faz coisas independentes dividirem o mesmo destino: uma
 mensagem envenenada trava a fila e para entregas que nada tinham a ver com ela,

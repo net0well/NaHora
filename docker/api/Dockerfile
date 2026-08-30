@@ -9,18 +9,18 @@ WORKDIR /src
 # Copy only what restore needs first, so a source-only change does not
 # invalidate the restore layer.
 COPY backend/Directory.Build.props backend/Directory.Packages.props backend/global.json ./backend/
-COPY backend/FaceId.slnx ./backend/
-COPY backend/src/FaceId.Api/FaceId.Api.csproj                       ./backend/src/FaceId.Api/
-COPY backend/src/FaceId.Domain/FaceId.Domain.csproj                 ./backend/src/FaceId.Domain/
-COPY backend/src/FaceId.Features/FaceId.Features.csproj             ./backend/src/FaceId.Features/
-COPY backend/src/FaceId.Infrastructure/FaceId.Infrastructure.csproj ./backend/src/FaceId.Infrastructure/
-COPY backend/src/FaceId.Shared/FaceId.Shared.csproj                 ./backend/src/FaceId.Shared/
+COPY backend/NaHora.slnx ./backend/
+COPY backend/src/NaHora.Api/NaHora.Api.csproj                       ./backend/src/NaHora.Api/
+COPY backend/src/NaHora.Domain/NaHora.Domain.csproj                 ./backend/src/NaHora.Domain/
+COPY backend/src/NaHora.Features/NaHora.Features.csproj             ./backend/src/NaHora.Features/
+COPY backend/src/NaHora.Infrastructure/NaHora.Infrastructure.csproj ./backend/src/NaHora.Infrastructure/
+COPY backend/src/NaHora.Shared/NaHora.Shared.csproj                 ./backend/src/NaHora.Shared/
 
-RUN dotnet restore backend/src/FaceId.Api/FaceId.Api.csproj
+RUN dotnet restore backend/src/NaHora.Api/NaHora.Api.csproj
 
 COPY backend/ ./backend/
 
-RUN dotnet publish backend/src/FaceId.Api/FaceId.Api.csproj \
+RUN dotnet publish backend/src/NaHora.Api/NaHora.Api.csproj \
     --configuration Release \
     --no-restore \
     --output /app/publish \
@@ -43,17 +43,17 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Run unprivileged. A container process that does not need root must not have it.
-RUN groupadd --system --gid 64198 faceid \
-    && useradd --system --uid 64198 --gid faceid --no-create-home faceid
+RUN groupadd --system --gid 64198 nahora \
+    && useradd --system --uid 64198 --gid nahora --no-create-home nahora
 
 WORKDIR /app
-COPY --from=build --chown=faceid:faceid /app/publish .
+COPY --from=build --chown=nahora:nahora /app/publish .
 
 # ONNX models are mounted at runtime, never baked in: they are large and some
 # carry licence restrictions that must not travel inside a distributed image.
-RUN mkdir -p /app/models /app/certs && chown faceid:faceid /app/models /app/certs
+RUN mkdir -p /app/models /app/certs && chown nahora:nahora /app/models /app/certs
 
-USER faceid
+USER nahora
 
 ENV ASPNETCORE_URLS=http://+:8080 \
     ASPNETCORE_ENVIRONMENT=Production \
@@ -65,4 +65,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl --fail --silent http://localhost:8080/health/ready || exit 1
 
-ENTRYPOINT ["dotnet", "FaceId.Api.dll"]
+ENTRYPOINT ["dotnet", "NaHora.Api.dll"]

@@ -1,10 +1,10 @@
 # ---------------------------------------------------------------------------
 # Especificações — nunca versionadas
-# As specs vivem em ../FaceIdSpecs, fora deste repositório. As entradas abaixo
+# As specs vivem em ../NaHoraSpecs, fora deste repositório. As entradas abaixo
 # são uma segunda barreira contra cópia acidental para dentro do repo.
 # ---------------------------------------------------------------------------
-FaceIdSpecs/
-/FaceIdSpecs/
+NaHoraSpecs/
+/NaHoraSpecs/
 docs/specs/
 *-spec.md
 *.spec.md
@@ -58,10 +58,10 @@ obj/
 # source — the debug manifest and the network policy that lets the app reach
 # the API over plain HTTP in development. A fresh clone lost both, with nothing
 # to indicate why.
-!frontend/faceid/android/app/src/debug/
-!frontend/faceid/android/app/src/debug/**
-!frontend/faceid/android/app/src/release/
-!frontend/faceid/android/app/src/release/**
+!frontend/nahora/android/app/src/debug/
+!frontend/nahora/android/app/src/debug/**
+!frontend/nahora/android/app/src/release/
+!frontend/nahora/android/app/src/release/**
 x64/
 x86/
 *.user
@@ -82,16 +82,16 @@ BenchmarkDotNet.Artifacts/
 # ---------------------------------------------------------------------------
 # Flutter / Dart
 # ---------------------------------------------------------------------------
-frontend/faceid/build/
-frontend/faceid/.dart_tool/
-frontend/faceid/.flutter-plugins
-frontend/faceid/.flutter-plugins-dependencies
-frontend/faceid/.packages
-frontend/faceid/.pub-cache/
-frontend/faceid/.pub/
-frontend/faceid/windows/flutter/ephemeral/
-frontend/faceid/android/.gradle/
-frontend/faceid/ios/Pods/
+frontend/nahora/build/
+frontend/nahora/.dart_tool/
+frontend/nahora/.flutter-plugins
+frontend/nahora/.flutter-plugins-dependencies
+frontend/nahora/.packages
+frontend/nahora/.pub-cache/
+frontend/nahora/.pub/
+frontend/nahora/windows/flutter/ephemeral/
+frontend/nahora/android/.gradle/
+frontend/nahora/ios/Pods/
 *.iml
 .idea/
 
@@ -103,14 +103,14 @@ biometric-dataset/
 *.jpg
 *.jpeg
 *.png
-!frontend/faceid/assets/**/*.png
+!frontend/nahora/assets/**/*.png
 !docs/**/*.png
 
 # Android app resources — launcher icons and the like. Never biometric data,
 # and the build fails without them: the blanket rule above was dropping the
 # launcher icon, which builds fine on a machine that has it on disk and fails
 # in CI on a clean checkout.
-!frontend/faceid/android/app/src/**/res/**
+!frontend/nahora/android/app/src/**/res/**
 
 # ---------------------------------------------------------------------------
 # Sistema operacional

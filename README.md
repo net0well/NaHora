@@ -1,6 +1,6 @@
 <div align="center">
 
-# FaceId
+# NaHora
 
 **Controle de ponto com reconhecimento facial, anti-fraude e conformidade legal**
 
@@ -15,7 +15,7 @@
 
 ## Sobre
 
-O FaceId registra jornada de trabalho com identificação biométrica e prova de
+O NaHora registra jornada de trabalho com identificação biométrica e prova de
 vivacidade, produzindo registros que satisfazem a **Portaria MTP 671/2021**
 (REP-P) — NSR sequencial, AFD assinado digitalmente e comprovante ao trabalhador.
 
@@ -63,11 +63,11 @@ PostgreSQL  MinIO      RabbitMQ    ONNX Runtime
 
 ```
 backend/src/
-├── FaceId.Api/             endpoints, composição, middleware
-├── FaceId.Features/        slices verticais (command, handler, endpoint)
-├── FaceId.Domain/          entidades, value objects, regras, portas
-├── FaceId.Infrastructure/  EF Core, MinIO, RabbitMQ, ONNX, assinatura
-└── FaceId.Shared/          primitivos sem dependência de domínio
+├── NaHora.Api/             endpoints, composição, middleware
+├── NaHora.Features/        slices verticais (command, handler, endpoint)
+├── NaHora.Domain/          entidades, value objects, regras, portas
+├── NaHora.Infrastructure/  EF Core, MinIO, RabbitMQ, ONNX, assinatura
+└── NaHora.Shared/          primitivos sem dependência de domínio
 ```
 
 `Domain` não referencia nenhum projeto — a regra é verificada por teste de
@@ -114,7 +114,7 @@ de US$ 400/mês). O Wolverine é MIT e cobre mediator local, RabbitMQ e outbox
 transacional num pacote só.
 
 **Os pesos do InsightFace/ArcFace/SCRFD são _non-commercial research only_.** O
-código é MIT, mas é o peso que faz o reconhecimento. Como o FaceId é comercial, a
+código é MIT, mas é o peso que faz o reconhecimento. Como o NaHora é comercial, a
 stack usa YuNet e SFace, ambos Apache-2.0. Detalhes e riscos conhecidos em
 [`models/README.md`](models/README.md).
 
@@ -176,7 +176,7 @@ então um endereço digitado errado em teste não alcança uma pessoa real.
 ### 2. Backend
 
 ```bash
-cd backend && dotnet run --project src/FaceId.Api
+cd backend && dotnet run --project src/NaHora.Api
 ```
 
 | Endpoint | Descrição |
@@ -189,7 +189,7 @@ cd backend && dotnet run --project src/FaceId.Api
 ### 3. Frontend
 
 ```bash
-cd frontend/faceid && flutter run -d android
+cd frontend/nahora && flutter run -d android
 ```
 
 Com um aparelho conectado por USB (depuração USB ligada) ou um emulador aberto.
@@ -205,9 +205,9 @@ cd backend && dotnet test
 
 | Projeto | Cobre |
 |---------|-------|
-| `FaceId.UnitTests` | Domínio, regras, cálculo de jornada, decisão biométrica |
-| `FaceId.ArchitectureTests` | Direção de dependência, isolamento de slices, licenças |
-| `FaceId.IntegrationTests` | API completa com PostgreSQL, MinIO e RabbitMQ reais |
+| `NaHora.UnitTests` | Domínio, regras, cálculo de jornada, decisão biométrica |
+| `NaHora.ArchitectureTests` | Direção de dependência, isolamento de slices, licenças |
+| `NaHora.IntegrationTests` | API completa com PostgreSQL, MinIO e RabbitMQ reais |
 
 Testes de integração usam **Testcontainers** com bancos reais. Provider em
 memória não tem `timestamptz`, `jsonb`, trigger nem `FOR UPDATE` — testar contra
