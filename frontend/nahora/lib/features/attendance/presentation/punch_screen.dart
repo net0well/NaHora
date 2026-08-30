@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../design_system/components/app_brand_band.dart';
 import '../../../design_system/components/app_button.dart';
@@ -31,7 +32,7 @@ class PunchScreen extends ConsumerWidget {
     final state = ref.watch(punchControllerProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -67,7 +68,19 @@ class _Band extends ConsumerWidget {
     return AppBrandBand(
       eyebrow: 'Olá,',
       title: session?.user.fullName ?? 'Bem-vindo',
+      onBack: () => _leave(context, ref),
     );
+  }
+}
+
+/// Leaves the screen, clearing the punch state on the way out.
+///
+/// Without the reset, reopening the screen would show the previous
+/// confirmation as though it had just happened.
+void _leave(BuildContext context, WidgetRef ref) {
+  ref.read(punchControllerProvider.notifier).reset();
+  if (context.canPop()) {
+    context.pop();
   }
 }
 
@@ -258,7 +271,7 @@ class _Confirmation extends ConsumerWidget {
           label: 'Voltar',
           variant: AppButtonVariant.secondary,
           expanded: true,
-          onPressed: () => ref.read(punchControllerProvider.notifier).reset(),
+          onPressed: () => _leave(context, ref),
         ),
       ],
     );

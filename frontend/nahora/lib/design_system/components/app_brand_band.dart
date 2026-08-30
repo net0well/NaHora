@@ -15,6 +15,7 @@ class AppBrandBand extends StatelessWidget {
     required this.title,
     super.key,
     this.eyebrow,
+    this.onBack,
     this.footerLeading,
     this.footerTrailing,
     this.padding,
@@ -25,6 +26,10 @@ class AppBrandBand extends StatelessWidget {
 
   /// Small line above the title. A greeting, or the screen's name.
   final String? eyebrow;
+
+  /// Shows a back arrow when given. A screen reached by push needs a visible
+  /// way out — the system gesture alone is not an affordance.
+  final VoidCallback? onBack;
 
   final String? footerLeading;
   final String? footerTrailing;
@@ -50,6 +55,18 @@ class AppBrandBand extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (onBack != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back),
+                color: AppColors.onPrimary,
+                tooltip: 'Voltar',
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
           if (eyebrow != null)
             Text(
               eyebrow!,
