@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
+import '../theme/app_sizing.dart';
+import 'app_button_variant.dart';
 
-enum AppButtonVariant { primary, secondary, danger, text }
-
-/// Application button. Handles its own loading state so callers never have to
-/// remember to disable the button while a request is in flight — the double
-/// submit that creates a duplicate punch is not left to discipline.
+/// Application button.
+///
+/// A thin adapter over the component library, which is what makes ADR-006
+/// reversible: replacing the library rewrites this file, not the screens.
+///
+/// It owns its loading state so callers never have to remember to disable the
+/// button while a request is in flight — the double submit that creates a
+/// duplicate punch is not left to discipline.
 class AppButton extends StatelessWidget {
   const AppButton({
     required this.label,
@@ -31,84 +35,63 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = _buildContent();
+    final child = Text(label);
+    final leading = _buildLeading();
+    final width = expanded ? double.infinity : null;
+    final onTap = _isEnabled ? onPressed : null;
 
     final button = switch (variant) {
-      AppButtonVariant.primary => FilledButton(
-        onPressed: _isEnabled ? onPressed : null,
-        style: _style(AppColors.primary, AppColors.surface),
+      AppButtonVariant.primary => ShadButton(
+        onPressed: onTap,
+        leading: leading,
+        height: AppSizing.buttonHeight,
+        width: width,
         child: child,
       ),
-      AppButtonVariant.secondary => OutlinedButton(
-        onPressed: _isEnabled ? onPressed : null,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          minimumSize: const Size(0, AppSizing.buttonHeight),
-          side: const BorderSide(color: AppColors.primary),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          textStyle: AppTypography.labelLarge,
-        ),
+      AppButtonVariant.secondary => ShadButton.outline(
+        onPressed: onTap,
+        leading: leading,
+        height: AppSizing.buttonHeight,
+        width: width,
         child: child,
       ),
-      AppButtonVariant.danger => FilledButton(
-        onPressed: _isEnabled ? onPressed : null,
-        style: _style(AppColors.danger, AppColors.surface),
+      AppButtonVariant.danger => ShadButton.destructive(
+        onPressed: onTap,
+        leading: leading,
+        height: AppSizing.buttonHeight,
+        width: width,
         child: child,
       ),
-      AppButtonVariant.text => TextButton(
-        onPressed: _isEnabled ? onPressed : null,
-        style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          minimumSize: const Size(0, AppSizing.minTapTarget),
-          textStyle: AppTypography.labelLarge,
-        ),
+      AppButtonVariant.text => ShadButton.link(
+        onPressed: onTap,
+        leading: leading,
+        height: AppSizing.minTapTarget,
+        width: width,
         child: child,
       ),
     };
 
+    // The label is announced even while loading, when the visible content is a
+    // spinner that reads as nothing.
     return Semantics(
       button: true,
       enabled: _isEnabled,
       label: label,
-      child: expanded
-          ? SizedBox(width: double.infinity, child: button)
-          : button,
+      child: ExcludeSemantics(child: button),
     );
   }
 
-  ButtonStyle _style(Color background, Color foreground) =>
-      FilledButton.styleFrom(
-        backgroundColor: background,
-        foregroundColor: foreground,
-        minimumSize: const Size(0, AppSizing.buttonHeight),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        textStyle: AppTypography.labelLarge,
-      );
-
-  Widget _buildContent() {
+  Widget? _buildLeading() {
     if (isLoading) {
-      return const SizedBox(
-        height: 18,
-        width: 18,
-        child: CircularProgressIndicator(strokeWidth: 2),
+      return const SizedBox.square(
+        dimension: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.surface,
+        ),
       );
     }
 
-    if (icon == null) {
-      return Text(label);
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: AppSpacing.sm),
-        Text(label),
-      ],
-    );
+    return icon == null ? null : Icon(icon, size: 16);
   }
 }
