@@ -50,4 +50,14 @@ public static class CompanyErrors
     public static Error AlreadyInactive() => Error.Conflict(
         "COMPANY_ALREADY_INACTIVE",
         "This company is already inactive.");
+
+    public static Error AddressRequired() => Error.Validation(
+        "COMPANY_ADDRESS_REQUIRED",
+        "The company address is required.",
+        "address");
+
+    public static Error AdministratorRequired() => Error.Validation(
+        "COMPANY_ADMINISTRATOR_REQUIRED",
+        "The first administrator account is required.",
+        "administrator");
 }
