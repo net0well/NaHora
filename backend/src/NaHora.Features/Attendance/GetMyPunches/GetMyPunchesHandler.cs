@@ -64,5 +64,6 @@ public static class GetMyPunchesHandler
             punch.Origin.ToString(),
             punch.Trust.ToString(),
             punch.OccurredAt,
+            (int)punch.CompanyOffset.TotalSeconds,
             punch.Location.AccuracyMeters);
 }

@@ -9,6 +9,11 @@ namespace NaHora.Features.Attendance.GetMyPunchHistory;
 /// company time, and recomputing it on a device in another timezone would split
 /// one day into two.
 /// </remarks>
+/// <param name="UtcOffsetSeconds">
+/// The company offset in force when this punch happened. Sent per entry rather
+/// than per page so a punch made before a daylight-saving change still renders
+/// at the hour it was recorded at.
+/// </param>
 public sealed record PunchHistoryEntryResponse(
     Guid Id,
     long Nsr,
@@ -17,4 +22,5 @@ public sealed record PunchHistoryEntryResponse(
     string Trust,
     DateTimeOffset OccurredAt,
     DateOnly LocalDate,
+    int UtcOffsetSeconds,
     double AccuracyMeters);

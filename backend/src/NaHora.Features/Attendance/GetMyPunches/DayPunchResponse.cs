@@ -9,6 +9,11 @@ namespace NaHora.Features.Attendance.GetMyPunches;
 /// map of where the person has been on the least protected part of the system.
 /// Accuracy is enough to explain why a record is marked degraded.
 /// </remarks>
+/// <param name="UtcOffsetSeconds">
+/// The company offset in force when this punch happened, so the app renders it
+/// in company hours without needing a separately synchronised clock — and
+/// without a punch made before a daylight-saving change shifting by an hour.
+/// </param>
 public sealed record DayPunchResponse(
     Guid Id,
     long Nsr,
@@ -16,4 +21,5 @@ public sealed record DayPunchResponse(
     string Origin,
     string Trust,
     DateTimeOffset OccurredAt,
+    int UtcOffsetSeconds,
     double AccuracyMeters);

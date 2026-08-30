@@ -62,5 +62,6 @@ public static class GetMyPunchHistoryHandler
             punch.Trust.ToString(),
             punch.OccurredAt,
             punch.LocalDate,
+            (int)punch.CompanyOffset.TotalSeconds,
             punch.Location.AccuracyMeters);
 }
