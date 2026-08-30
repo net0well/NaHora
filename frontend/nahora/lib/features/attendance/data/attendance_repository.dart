@@ -7,6 +7,7 @@ import '../domain/punch_day.dart';
 import '../domain/punch_direction.dart';
 import '../domain/punch_history_page.dart';
 import '../domain/punch_receipt.dart';
+import '../domain/work_day.dart';
 
 /// Talks to the attendance endpoints.
 // Named parameters keep the call site readable while the field stays private.
@@ -102,6 +103,28 @@ class AttendanceRepository {
       }
 
       return PunchDay.fromJson(body);
+    } on DioException catch (exception) {
+      throw ApiExceptionMapper.map(exception);
+    }
+  }
+
+  /// The hours the signed-in person is expected to work.
+  ///
+  /// The employee's own when they have any, the company's otherwise. Shown
+  /// above the punch button so somebody recording a punch can see what the day
+  /// was supposed to be — it never stops them recording it.
+  Future<WorkSchedule> workSchedule() async {
+    try {
+      final response = await _client.get<Map<String, dynamic>>(
+        '/api/v1/schedules/me',
+      );
+      final body = response.data;
+
+      if (body == null) {
+        throw const UnexpectedException();
+      }
+
+      return WorkSchedule.fromJson(body);
     } on DioException catch (exception) {
       throw ApiExceptionMapper.map(exception);
     }

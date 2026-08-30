@@ -7,6 +7,7 @@ import 'package:nahora/features/attendance/domain/punch_entry.dart';
 import 'package:nahora/features/attendance/domain/punch_history_page.dart';
 import 'package:nahora/features/attendance/domain/punch_receipt.dart';
 import 'package:nahora/features/attendance/domain/punch_trust.dart';
+import 'package:nahora/features/attendance/domain/work_day.dart';
 
 /// A stand-in for the real repository, shared by every test that needs one.
 ///
@@ -28,6 +29,8 @@ class FakeAttendanceRepository implements AttendanceRepository {
   /// Named apart from the [history] method: a field and a method cannot
   /// share a name.
   PunchHistoryPage historyPage;
+
+  WorkSchedule schedule = defaultSchedule();
 
   final List<CapturedLocation> sentLocations = [];
   final List<DateTime> sentDeviceClocks = [];
@@ -67,6 +70,15 @@ class FakeAttendanceRepository implements AttendanceRepository {
   }
 
   @override
+  Future<WorkSchedule> workSchedule() async {
+    if (readFailure != null) {
+      throw readFailure!;
+    }
+
+    return schedule;
+  }
+
+  @override
   Future<PunchDay> punchesForDay({String? localDate}) async {
     if (readFailure != null) {
       throw readFailure!;
@@ -82,6 +94,37 @@ class FakeAttendanceRepository implements AttendanceRepository {
     }
 
     return historyPage;
+  }
+
+  /// Monday to Friday, eight to five with an hour off.
+  static WorkSchedule defaultSchedule({bool isWorkday = true}) {
+    const day = WorkDay(
+      dayOfWeek: 1,
+      isWorkday: true,
+      expectedMinutes: 480,
+      expectedPunches: 4,
+      describe: '08:00 às 17:00, com 1h de intervalo',
+      startTime: '08:00',
+      lunchStartTime: '12:00',
+      lunchEndTime: '13:00',
+      endTime: '17:00',
+    );
+
+    const off = WorkDay(
+      dayOfWeek: 0,
+      isWorkday: false,
+      expectedMinutes: 0,
+      expectedPunches: 0,
+      describe: 'Sem expediente',
+    );
+
+    return WorkSchedule(
+      source: WorkScheduleSource.company,
+      timeZoneId: 'America/Sao_Paulo',
+      localDate: '2026-08-31',
+      today: isWorkday ? day : off,
+      week: const [off, day, day, day, day, day, off],
+    );
   }
 
   static PunchDay emptyDay() => const PunchDay(

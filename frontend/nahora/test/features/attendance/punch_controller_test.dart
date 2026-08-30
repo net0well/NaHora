@@ -7,6 +7,7 @@ import 'package:nahora/features/attendance/presentation/attendance_providers.dar
 import 'package:nahora/features/attendance/presentation/punch_state.dart';
 
 import '../../support/fake_attendance_repository.dart';
+import '../../support/fake_location_provider.dart';
 
 /// The state machine behind the punch button.
 ///
@@ -15,11 +16,11 @@ import '../../support/fake_attendance_repository.dart';
 /// are exactly the ones a real GPS will not produce on demand.
 void main() {
   group('PunchController', () {
-    late _FakeLocationProvider location;
+    late FakeLocationProvider location;
     late FakeAttendanceRepository repository;
 
     setUp(() {
-      location = _FakeLocationProvider();
+      location = FakeLocationProvider();
       repository = FakeAttendanceRepository();
     });
 
@@ -230,35 +231,3 @@ CapturedLocation _locationWith({
   capturedAt: DateTime.utc(2026, 8, 30, 14, 32),
   isMocked: isMocked,
 );
-
-class _FakeLocationProvider implements LocationProvider {
-  LocationPermissionState permission = LocationPermissionState.granted;
-  LocationPermissionState? permissionAfterRequest;
-  bool serviceEnabled = true;
-  bool failsToLocate = false;
-  CapturedLocation? position;
-
-  int requestCount = 0;
-
-  @override
-  Future<LocationPermissionState> checkPermission() async => permission;
-
-  @override
-  Future<LocationPermissionState> requestPermission() async {
-    requestCount++;
-
-    return permissionAfterRequest ?? permission;
-  }
-
-  @override
-  Future<bool> isServiceEnabled() async => serviceEnabled;
-
-  @override
-  Future<CapturedLocation> currentLocation() async {
-    if (failsToLocate || position == null) {
-      throw StateError('no fix');
-    }
-
-    return position!;
-  }
-}

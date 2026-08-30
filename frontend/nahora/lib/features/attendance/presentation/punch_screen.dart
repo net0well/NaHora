@@ -10,6 +10,7 @@ import '../../../design_system/components/app_button_variant.dart';
 import '../../../design_system/components/app_location_preview.dart';
 import '../../../design_system/components/punch_clock_button.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/theme/app_radius.dart';
 import '../../../design_system/theme/app_spacing.dart';
 import '../../../design_system/theme/app_typography.dart';
 import '../../auth/presentation/auth_providers.dart';
@@ -84,7 +85,79 @@ void _leave(BuildContext context, WidgetRef ref) {
   }
 }
 
-/// Location, then the clock button. Nothing between them.
+/// The hours the day was supposed to run.
+///
+/// Sits above the location so the employee reads the expectation before the
+/// evidence. Silent when nobody has set a schedule: an invented nine-to-five
+/// would be the app asserting hours nobody agreed to.
+class _ExpectedHours extends ConsumerWidget {
+  const _ExpectedHours();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final schedule = ref.watch(workScheduleProvider);
+
+    return schedule.maybeWhen(
+      data: (value) => value.today.isWorkday
+          ? _Line(source: value.source.label, hours: value.today.describe)
+          : const SizedBox.shrink(),
+
+      // Loading and failure are both silent. The schedule is context, and a
+      // spinner or an error above the punch button would read as something
+      // standing between the employee and recording their time.
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _Line extends StatelessWidget {
+  const _Line({required this.source, required this.hours});
+
+  final String source;
+  final String hours;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$source: $hours',
+      child: ExcludeSemantics(
+        child: Container(
+          key: const Key('punch_expected_hours'),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                source,
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                hours,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Expected hours, location, then the clock button.
 class _PunchFlow extends StatelessWidget {
   const _PunchFlow({required this.state});
 
@@ -95,6 +168,8 @@ class _PunchFlow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const _ExpectedHours(),
+        const SizedBox(height: AppSpacing.md),
         AppLocationPreview(
           height: 190,
           accuracyMeters: switch (state) {

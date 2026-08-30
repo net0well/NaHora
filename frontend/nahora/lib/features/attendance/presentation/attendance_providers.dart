@@ -9,6 +9,7 @@ import '../data/server_clock.dart';
 import '../domain/location_provider.dart';
 import '../domain/punch_day.dart';
 import '../domain/punch_history_page.dart';
+import '../domain/work_day.dart';
 import 'punch_controller.dart';
 import 'punch_state.dart';
 
@@ -65,4 +66,13 @@ final punchDayProvider = FutureProvider.autoDispose<PunchDay>(
 /// pager built before there is anything to page through is guesswork.
 final punchHistoryProvider = FutureProvider.autoDispose<PunchHistoryPage>(
   (ref) => ref.watch(attendanceRepositoryProvider).history(),
+);
+
+/// The hours the signed-in person is expected to work.
+///
+/// Not auto-disposed: a schedule does not change between two taps, and asking
+/// again on every visit to the punch screen is a request that answers the same
+/// thing.
+final workScheduleProvider = FutureProvider<WorkSchedule>(
+  (ref) => ref.watch(attendanceRepositoryProvider).workSchedule(),
 );
