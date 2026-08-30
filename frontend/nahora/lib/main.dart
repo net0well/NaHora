@@ -38,7 +38,7 @@ class NaHoraApp extends ConsumerWidget {
       appBuilder: (context) => MaterialApp.router(
         title: 'NaHora',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
+        theme: AppTheme.dark(),
         routerConfig: ref.watch(_routerProvider),
         builder: (context, child) => ShadAppBuilder(child: child!),
       ),
