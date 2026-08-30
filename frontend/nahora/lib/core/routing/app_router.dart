@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/auth_providers.dart';
 import '../../features/auth/presentation/auth_state.dart';
+import '../../features/attendance/presentation/punch_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
-import '../../features/home/presentation/home_screen.dart';
+import '../../features/home/presentation/home_shell_screen.dart';
 
 abstract final class AppRoutes {
   static const String splash = '/';
@@ -41,7 +42,12 @@ abstract final class AppRouter {
         GoRoute(
           path: AppRoutes.dashboard,
           name: 'dashboard',
-          builder: (context, state) => const HomeScreen(),
+          builder: (context, state) => const HomeShellScreen(),
+        ),
+        GoRoute(
+          path: AppRoutes.attendance,
+          name: 'attendance',
+          builder: (context, state) => const PunchScreen(),
         ),
       ],
     );
@@ -60,6 +66,9 @@ abstract final class AppRouter {
 
       AuthSignedOut() => location == AppRoutes.login ? null : AppRoutes.login,
 
+      // The shell, where the punch action is already the raised button in the
+      // middle of the bar. Landing straight on the punch screen would skip the
+      // place the employee returns to afterwards.
       AuthSignedIn() =>
         location == AppRoutes.login || location == AppRoutes.splash
             ? AppRoutes.dashboard
