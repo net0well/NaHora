@@ -10,7 +10,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   // A production build talking to a plaintext endpoint would send credentials
-  // and biometric frames in the clear. Fail at startup instead of shipping it.
+  // and location data in the clear. Fail at startup instead of shipping it.
   assert(
     AppConfig.isTransportSecure,
     'API_BASE_URL must use HTTPS in a production build.',

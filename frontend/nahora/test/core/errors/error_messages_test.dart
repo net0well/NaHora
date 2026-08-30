@@ -40,18 +40,19 @@ void main() {
       expect(message.contains('_'), isFalse);
     });
 
-    test('Given any mapped code, When resolved, Then no message exposes a biometric score', () {
+    test('Given any mapped code, When resolved, Then no message exposes a coordinate or an internal measure', () {
       // Arrange
       const forbidden = [
-        'score',
-        'similarity',
-        'liveness',
+        'latitude',
+        'longitude',
+        'coordenada',
         'threshold',
-        'embedding',
+        'score',
       ];
 
-      // Act & Assert — a message that reveals the score teaches an attacker
-      // what to tune. The user is told what to do, never what was measured.
+      // Act & Assert — the message tells the user what to do, never what was
+      // measured. A coordinate on screen is also a coordinate in a screenshot
+      // sent to support.
       for (final code in _allMappedCodes) {
         final message = ErrorMessages.resolve(code).toLowerCase();
         for (final term in forbidden) {
@@ -71,12 +72,12 @@ const _allMappedCodes = [
   'UNAUTHORIZED',
   'INVALID_CREDENTIALS',
   'ACCOUNT_LOCKED',
-  'FACE_NOT_DETECTED',
-  'MULTIPLE_FACES_DETECTED',
-  'FACE_QUALITY_TOO_LOW',
-  'LIVENESS_FAILED',
-  'LIVENESS_CHALLENGE_TIMEOUT',
-  'FACE_ENROLLMENT_INCONSISTENT',
-  'BIOMETRIC_CONSENT_REQUIRED',
-  'EMPLOYEE_PROFILE_REQUIRED',
+  'LOCATION_REQUIRED',
+  'LOCATION_PERMISSION_DENIED',
+  'PUNCH_NOT_FOUND',
+  'PUNCH_ALREADY_REGISTERED',
+  'JUSTIFICATION_REQUIRED',
+  'JUSTIFICATION_NOTES_REQUIRED',
+  'ATTACHMENT_TOO_LARGE',
+  'ATTACHMENT_TYPE_NOT_ALLOWED',
 ];

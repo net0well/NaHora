@@ -26,15 +26,18 @@ abstract final class AppColors {
   static const Color dangerLight = Color(0xFFFBEAE9);
   static const Color info = Color(0xFF1B5FA8);
 
-  /// Camera frame states.
+  /// Punch states.
   ///
   /// Colour alone never carries the meaning: every state also renders an icon
   /// and a text label, because roughly 8% of men have some colour vision
-  /// deficiency and a red frame would tell them nothing.
-  static const Color frameIdle = Color(0xFF9AA3AF);
-  static const Color frameAdjusting = Color(0xFFB26A00);
-  static const Color frameChallenge = Color(0xFF1B5FA8);
-  static const Color frameSuccess = Color(0xFF1B7F4B);
-  static const Color frameFailure = Color(0xFFB3261E);
-  static const Color frameSuspicious = Color(0xFF8A6100);
+  /// deficiency and a red indicator would tell them nothing.
+  static const Color punchLocating = Color(0xFF9AA3AF);
+  static const Color punchLowAccuracy = Color(0xFFB26A00);
+  static const Color punchReady = Color(0xFF1B5FA8);
+  static const Color punchConfirmed = Color(0xFF1B7F4B);
+  static const Color punchFailed = Color(0xFFB3261E);
+
+  /// Recorded on the device, not yet sent. Presented as success, never as an
+  /// error: the punch exists, it simply has not synced.
+  static const Color punchQueued = Color(0xFF8A6100);
 }

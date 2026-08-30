@@ -31,7 +31,7 @@ class UnexpectedException extends AppException {
 
 /// Maps backend error codes to messages a person can act on.
 ///
-/// Anything technical stays out: a stack trace, a table name or a biometric
+/// Anything technical stays out: a stack trace, a table name or a raw
 /// score must never reach the screen. An unknown code falls back to the generic
 /// message rather than leaking the raw value.
 abstract final class ErrorMessages {
@@ -53,26 +53,21 @@ abstract final class ErrorMessages {
     'ONBOARDING_INCOMPLETE': 'Conclua seu primeiro acesso para continuar.',
     'COMPANY_SUSPENDED': 'O acesso da sua empresa está suspenso. Procure o RH.',
 
-    // Biometria
-    'FACE_NOT_DETECTED': 'Não encontramos seu rosto. Verifique a iluminação.',
-    'MULTIPLE_FACES_DETECTED':
-        'Certifique-se de estar sozinho diante da câmera.',
-    'FACE_QUALITY_TOO_LOW':
-        'A imagem não ficou nítida. Tente em um local mais claro.',
-    'LIVENESS_FAILED':
-        'Não foi possível concluir a verificação. Vamos tentar de novo.',
-    'LIVENESS_CHALLENGE_TIMEOUT': 'O tempo acabou. Vamos tentar novamente.',
-    'FACE_ENROLLMENT_INCONSISTENT':
-        'As fotos não parecem ser da mesma pessoa. Vamos recomeçar.',
-    'FACE_PROFILE_ALREADY_EXISTS': 'Você já possui um cadastro facial ativo.',
-    'BIOMETRIC_CONSENT_REQUIRED':
-        'É necessário autorizar o uso da sua biometria.',
-    'EMPLOYEE_PROFILE_REQUIRED': 'Cadastre seu rosto antes de bater ponto.',
+    // Localização
+    'LOCATION_REQUIRED':
+        'Não conseguimos sua localização. Verifique se o GPS está ligado.',
+    'LOCATION_PERMISSION_DENIED':
+        'Permita o acesso à localização para marcar o ponto.',
 
     // Ponto
-    'ATTENDANCE_SESSION_EXPIRED': 'A sessão expirou. Inicie novamente.',
-    'MANUAL_ENTRY_REASON_REQUIRED':
-        'Informe a justificativa da marcação manual.',
+    'PUNCH_NOT_FOUND': 'Marcação não encontrada.',
+    'PUNCH_ALREADY_REGISTERED': 'Esta marcação já foi registrada.',
+
+    // Ajuste de ponto
+    'JUSTIFICATION_REQUIRED': 'Escolha uma justificativa para o ajuste.',
+    'JUSTIFICATION_NOTES_REQUIRED': 'Descreva o motivo do ajuste.',
+    'ATTACHMENT_TOO_LARGE': 'O anexo é grande demais. O limite é 5 MB.',
+    'ATTACHMENT_TYPE_NOT_ALLOWED': 'Envie uma imagem ou um PDF.',
 
     // Cadastro
     'CNPJ_INVALID': 'CNPJ inválido.',

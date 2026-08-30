@@ -9,8 +9,9 @@ import 'status_tone.dart';
 ///
 /// Renders colour **and** icon **and** text, always. This is the rule spec 010
 /// states outright, and the reason is concrete: this component reports the
-/// state of the camera frame and of a punch, and a user who cannot distinguish
-/// the colours would be left with an indicator that conveys nothing.
+/// state of a punch — confirmed, queued, low accuracy — and a user who cannot
+/// distinguish the colours would be left with an indicator that conveys
+/// nothing.
 class StatusIndicator extends StatelessWidget {
   const StatusIndicator({required this.label, required this.tone, super.key});
 

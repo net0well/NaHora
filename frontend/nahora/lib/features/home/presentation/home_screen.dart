@@ -24,7 +24,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Icon(
-                  Icons.face_retouching_natural_outlined,
+                  Icons.access_time_filled_outlined,
                   size: 72,
                   color: AppColors.primary,
                 ),
