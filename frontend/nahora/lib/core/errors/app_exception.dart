@@ -65,9 +65,20 @@ abstract final class ErrorMessages {
 
     // Ajuste de ponto
     'JUSTIFICATION_REQUIRED': 'Escolha uma justificativa para o ajuste.',
+    'JUSTIFICATION_NOT_FOUND': 'Essa justificativa não existe mais.',
     'JUSTIFICATION_NOTES_REQUIRED': 'Descreva o motivo do ajuste.',
-    'ATTACHMENT_TOO_LARGE': 'O anexo é grande demais. O limite é 5 MB.',
-    'ATTACHMENT_TYPE_NOT_ALLOWED': 'Envie uma imagem ou um PDF.',
+    'ADJUSTMENT_NOT_FOUND': 'Solicitação não encontrada.',
+    'ADJUSTMENT_ALREADY_DECIDED': 'Esta solicitação já foi decidida.',
+    'ADJUSTMENT_CANNOT_DECIDE_OWN_RECORD':
+        'Você não pode decidir sobre o seu próprio registro.',
+    'ADJUSTMENT_PUNCH_NOT_FOUND': 'A marcação que seria corrigida não existe.',
+    'ADJUSTMENT_OCCURRED_AT_REQUIRED': 'Informe o horário do ajuste.',
+    'ADJUSTMENT_OCCURRED_AT_IN_THE_FUTURE':
+        'O horário do ajuste não pode estar no futuro.',
+    'ADJUSTMENT_ATTACHMENT_MISSING': 'Anexe o comprovante para continuar.',
+    'ADJUSTMENT_ATTACHMENT_TOO_LARGE':
+        'O anexo é grande demais. O limite é 5 MB.',
+    'ADJUSTMENT_ATTACHMENT_TYPE_NOT_ACCEPTED': 'Envie uma imagem ou um PDF.',
 
     // Cadastro
     'CNPJ_INVALID': 'CNPJ inválido.',
