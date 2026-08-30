@@ -44,7 +44,7 @@ updates:
       - dependency-name: SixLabors.ImageSharp
 
   - package-ecosystem: pub
-    directory: /frontend/faceid
+    directory: /frontend/nahora
     target-branch: develop
     schedule:
       interval: weekly

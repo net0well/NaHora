@@ -23,7 +23,7 @@ models/
 frontend/
 
 # Specs and local tooling
-FaceIdSpecs/
+NaHoraSpecs/
 docs/
 .github/
 .git/

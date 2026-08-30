@@ -1,9 +1,9 @@
-name: faceid
+name: nahora
 
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: faceid-postgres
+    container_name: nahora-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -14,7 +14,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - faceid-postgres-data:/var/lib/postgresql/data
+      - nahora-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -24,7 +24,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: faceid-minio
+    container_name: nahora-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -34,7 +34,7 @@ services:
       - "${MINIO_API_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - faceid-minio-data:/data
+      - nahora-minio-data:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 5s
@@ -46,26 +46,26 @@ services:
   # are only ever reachable through a pre-signed URL issued by the backend.
   minio-init:
     image: minio/mc:latest
-    container_name: faceid-minio-init
+    container_name: nahora-minio-init
     depends_on:
       minio:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
       mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
-      mc mb --ignore-existing local/faceid-security-evidence &&
-      mc mb --ignore-existing local/faceid-exports &&
-      mc mb --ignore-existing local/faceid-compliance &&
-      mc version enable local/faceid-compliance &&
-      mc version enable local/faceid-security-evidence &&
-      mc ilm rule add --expire-days 7 local/faceid-exports || true &&
+      mc mb --ignore-existing local/nahora-attachments &&
+      mc mb --ignore-existing local/nahora-exports &&
+      mc mb --ignore-existing local/nahora-compliance &&
+      mc version enable local/nahora-compliance &&
+      mc version enable local/nahora-attachments &&
+      mc ilm rule add --expire-days 7 local/nahora-exports || true &&
       echo 'buckets ready'
       "
     restart: "no"
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
-    container_name: faceid-rabbitmq
+    container_name: nahora-rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
@@ -74,7 +74,7 @@ services:
       - "${RABBITMQ_PORT:-5672}:5672"
       - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     volumes:
-      - faceid-rabbitmq-data:/var/lib/rabbitmq
+      - nahora-rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
       interval: 10s
@@ -86,7 +86,7 @@ services:
   # mistyped address in a test cannot reach a real person.
   mailpit:
     image: axllent/mailpit:latest
-    container_name: faceid-mailpit
+    container_name: nahora-mailpit
     restart: unless-stopped
     ports:
       - "${MAILPIT_SMTP_PORT:-1025}:1025"
@@ -101,7 +101,7 @@ services:
   # interface, and it keeps nothing when the container stops.
   aspire-dashboard:
     image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
-    container_name: faceid-aspire-dashboard
+    container_name: nahora-aspire-dashboard
     restart: unless-stopped
     environment:
       # Local development only. Without this the dashboard demands a token on
@@ -112,6 +112,6 @@ services:
       - "${OTLP_GRPC_PORT:-4317}:18889"
 
 volumes:
-  faceid-postgres-data:
-  faceid-minio-data:
-  faceid-rabbitmq-data:
+  nahora-postgres-data:
+  nahora-minio-data:
+  nahora-rabbitmq-data:

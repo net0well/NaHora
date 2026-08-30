@@ -36,19 +36,19 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
-        run: dotnet restore FaceId.slnx
+        run: dotnet restore NaHora.slnx
 
       - name: Build
-        run: dotnet build FaceId.slnx --configuration Release --no-restore
+        run: dotnet build NaHora.slnx --configuration Release --no-restore
 
       - name: Unit tests
-        run: dotnet test --project tests/FaceId.UnitTests/FaceId.UnitTests.csproj --configuration Release --no-build
+        run: dotnet test --project tests/NaHora.UnitTests/NaHora.UnitTests.csproj --configuration Release --no-build
 
       - name: Architecture tests
-        run: dotnet test --project tests/FaceId.ArchitectureTests/FaceId.ArchitectureTests.csproj --configuration Release --no-build
+        run: dotnet test --project tests/NaHora.ArchitectureTests/NaHora.ArchitectureTests.csproj --configuration Release --no-build
 
       - name: Integration tests
-        run: dotnet test --project tests/FaceId.IntegrationTests/FaceId.IntegrationTests.csproj --configuration Release --no-build
+        run: dotnet test --project tests/NaHora.IntegrationTests/NaHora.IntegrationTests.csproj --configuration Release --no-build
 
   # ---------------------------------------------------------------------------
   # One artifact, promoted across environments. The image built here is the
@@ -107,7 +107,7 @@ jobs:
     needs: [verify]
     defaults:
       run:
-        working-directory: frontend/faceid
+        working-directory: frontend/nahora
 
     steps:
       - uses: actions/checkout@v7
@@ -139,13 +139,13 @@ jobs:
         run: |
           Compress-Archive `
             -Path build/windows/x64/runner/Release/* `
-            -DestinationPath faceid-windows-${{ github.ref_name }}.zip
+            -DestinationPath nahora-windows-${{ github.ref_name }}.zip
 
       - name: Upload package
         uses: actions/upload-artifact@v7
         with:
-          name: faceid-windows-${{ github.ref_name }}
-          path: frontend/faceid/faceid-windows-${{ github.ref_name }}.zip
+          name: nahora-windows-${{ github.ref_name }}
+          path: frontend/nahora/nahora-windows-${{ github.ref_name }}.zip
           retention-days: 90
 
   create-release:
@@ -159,7 +159,7 @@ jobs:
       - name: Download desktop package
         uses: actions/download-artifact@v8
         with:
-          name: faceid-windows-${{ github.ref_name }}
+          name: nahora-windows-${{ github.ref_name }}
           path: ./artifacts
 
       - name: Publish release
