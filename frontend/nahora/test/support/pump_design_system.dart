@@ -18,7 +18,7 @@ Future<void> pumpComponent(WidgetTester tester, Widget component) async {
     ShadTheme(
       data: AppTheme.shad(),
       child: MaterialApp(
-        theme: AppTheme.light(),
+        theme: AppTheme.dark(),
         home: Scaffold(body: Center(child: component)),
       ),
     ),
@@ -42,7 +42,7 @@ Future<void> pumpScreen(
       overrides: overrides,
       child: ShadTheme(
         data: AppTheme.shad(),
-        child: MaterialApp(theme: AppTheme.light(), home: screen),
+        child: MaterialApp(theme: AppTheme.dark(), home: screen),
       ),
     ),
   );

@@ -13,21 +13,29 @@ import 'app_typography.dart';
 /// reversible: replacing it changes what [shad] returns, not what any screen
 /// looks like.
 abstract final class AppTheme {
-  static ThemeData light() {
+  /// The application theme.
+  ///
+  /// Named for what it is rather than for a brightness the product does not
+  /// offer: there is one theme, it is dark, and the reference it came from was
+  /// approved that way. A second theme would be a decision, not a default.
+  static ThemeData dark() {
     final colorScheme =
         ColorScheme.fromSeed(
           seedColor: AppColors.primary,
-          brightness: Brightness.light,
+          brightness: Brightness.dark,
         ).copyWith(
           primary: AppColors.primary,
+          onPrimary: AppColors.onPrimary,
           surface: AppColors.surface,
+          onSurface: AppColors.textPrimary,
           error: AppColors.danger,
         );
 
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: AppColors.surfaceMuted,
+      scaffoldBackgroundColor: AppColors.background,
       fontFamily: AppTypography.fontFamily,
       textTheme: const TextTheme(
         displayLarge: AppTypography.displayLarge,
@@ -40,7 +48,7 @@ abstract final class AppTheme {
         labelSmall: AppTypography.labelSmall,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -58,7 +66,7 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: AppColors.surfaceMuted,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
@@ -95,24 +103,24 @@ abstract final class AppTheme {
   /// worst possible outcome: an interface that is almost consistent.
   static ShadThemeData shad() {
     return ShadThemeData(
-      brightness: Brightness.light,
+      brightness: Brightness.dark,
       colorScheme: const ShadColorScheme(
-        background: AppColors.surfaceMuted,
+        background: AppColors.background,
         foreground: AppColors.textPrimary,
         card: AppColors.surface,
         cardForeground: AppColors.textPrimary,
         popover: AppColors.surface,
         popoverForeground: AppColors.textPrimary,
         primary: AppColors.primary,
-        primaryForeground: AppColors.surface,
+        primaryForeground: AppColors.onPrimary,
         secondary: AppColors.surfaceMuted,
         secondaryForeground: AppColors.textPrimary,
         muted: AppColors.surfaceMuted,
         mutedForeground: AppColors.textSecondary,
         accent: AppColors.primaryLight,
-        accentForeground: AppColors.primaryDark,
+        accentForeground: AppColors.primaryInk,
         destructive: AppColors.danger,
-        destructiveForeground: AppColors.surface,
+        destructiveForeground: AppColors.onPrimary,
         border: AppColors.border,
         input: AppColors.border,
         ring: AppColors.primary,
