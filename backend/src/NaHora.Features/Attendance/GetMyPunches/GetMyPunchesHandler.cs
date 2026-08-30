@@ -3,6 +3,7 @@ using NaHora.Domain.Attendance;
 using NaHora.Domain.Companies;
 using NaHora.Domain.Employees;
 using NaHora.Domain.Errors;
+using NaHora.Domain.Scheduling;
 using NaHora.Shared.Results;
 
 namespace NaHora.Features.Attendance.GetMyPunches;
@@ -24,6 +25,8 @@ public static class GetMyPunchesHandler
         IPunchRepository punches,
         IEmployeeRepository employees,
         ICompanyRepository companies,
+        ICompanyWorkScheduleRepository companySchedules,
+        IEmployeeWorkScheduleRepository employeeSchedules,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
@@ -49,10 +52,20 @@ public static class GetMyPunchesHandler
 
         var day = await punches.GetByLocalDateAsync(companyId, employee.Id, localDate, cancellationToken);
 
+        // What the day was supposed to look like. It never gates the next
+        // punch — it is what lets the app say "you have already recorded the
+        // day" before somebody taps again by accident.
+        var scheduled = EffectiveWorkDay.On(
+            localDate,
+            await employeeSchedules.GetForEmployeeAsync(companyId, employee.Id, cancellationToken),
+            await companySchedules.GetByCompanyAsync(companyId, cancellationToken));
+
         return Result.Success(new GetMyPunchesResponse(
             localDate,
             timeZoneId,
             PunchDirectionSequence.NextAfter(day.Count).ToString(),
+            scheduled.ExpectedPunches,
+            scheduled.ExpectedPunches > 0 && day.Count >= scheduled.ExpectedPunches,
             [.. day.Select(ToResponse)]));
     }
 

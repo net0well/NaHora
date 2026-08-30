@@ -51,6 +51,20 @@ public static class AdjustmentErrors
         "The attachment is missing.",
         "attachment");
 
+    public static Error AttachmentTooLarge(long maximumBytes) => Error.Validation(
+        "ADJUSTMENT_ATTACHMENT_TOO_LARGE",
+        $"The attachment must be at most {maximumBytes / (1024 * 1024)} MB.",
+        "attachment");
+
+    public static Error AttachmentTypeNotAccepted(string? contentType) => Error.Validation(
+        "ADJUSTMENT_ATTACHMENT_TYPE_NOT_ACCEPTED",
+        $"'{contentType}' is not an accepted attachment. Send an image or a PDF.",
+        "attachment");
+
+    public static Error AttachmentMissing() => Error.NotFound(
+        "ADJUSTMENT_ATTACHMENT_MISSING",
+        "This correction has no attachment.");
+
     public static Error AlreadyDecided() => Error.Conflict(
         "ADJUSTMENT_ALREADY_DECIDED",
         "This correction has already been decided.");
