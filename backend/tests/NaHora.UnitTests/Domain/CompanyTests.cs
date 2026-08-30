@@ -27,7 +27,7 @@ public sealed class CompanyTests
     public void Register_WhenNameIsBlankAndTimeZoneIsUnknown_ReportsBothErrors()
     {
         // Act
-        var result = Company.Register(ValidCnpj, "  ", null, ValidEmail, "Mars/Olympus", Now);
+        var result = Company.Register(ValidCnpj, "  ", null, ValidEmail, ValidAddress, "Mars/Olympus", Now);
 
         // Assert
         result.IsFailure.ShouldBeTrue();
@@ -44,7 +44,7 @@ public sealed class CompanyTests
     {
         // Act — Brazil spans four zones; assuming one would misreport lateness
         // for anyone outside it.
-        var result = Company.Register(ValidCnpj, "Acme", null, ValidEmail, timeZoneId, Now);
+        var result = Company.Register(ValidCnpj, "Acme", null, ValidEmail, ValidAddress, timeZoneId, Now);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -112,6 +112,15 @@ public sealed class CompanyTests
         result.Errors[0].Code.ShouldBe("COMPANY_ALREADY_INACTIVE");
     }
 
+    private static Address ValidAddress => Address.Create(
+        "01310100",
+        "Avenida Paulista",
+        "1000",
+        null,
+        "Bela Vista",
+        "São Paulo",
+        "SP").Value;
+
     private static Result<Company> Register() =>
-        Company.Register(ValidCnpj, "Acme Industria Ltda", "Acme", ValidEmail, Company.DefaultTimeZoneId, Now);
+        Company.Register(ValidCnpj, "Acme Industria Ltda", "Acme", ValidEmail, ValidAddress, Company.DefaultTimeZoneId, Now);
 }

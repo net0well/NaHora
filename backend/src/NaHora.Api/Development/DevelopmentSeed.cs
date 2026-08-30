@@ -114,10 +114,21 @@ internal static class DevelopmentSeed
         var employeeCpf = Cpf.Create(DevelopmentSeedData.EmployeeCpf);
         var employeeEmail = EmailAddress.Create(DevelopmentSeedData.EmployeeEmail);
         var employeePis = Pis.Create(DevelopmentSeedData.EmployeePis);
+        var companyPhone = PhoneNumber.Create(DevelopmentSeedData.CompanyPhone);
+        var employeePhone = PhoneNumber.Create(DevelopmentSeedData.EmployeePhone);
+        var address = Address.Create(
+            DevelopmentSeedData.PostalCode,
+            DevelopmentSeedData.Street,
+            DevelopmentSeedData.Number,
+            DevelopmentSeedData.Complement,
+            DevelopmentSeedData.District,
+            DevelopmentSeedData.City,
+            DevelopmentSeedData.State);
 
         Result[] documents =
         [
-            cnpj, companyEmail, managerCpf, managerEmail, employeeCpf, employeeEmail, employeePis
+            cnpj, companyEmail, managerCpf, managerEmail, employeeCpf, employeeEmail, employeePis,
+            companyPhone, employeePhone, address
         ];
 
         var documentErrors = documents
@@ -135,8 +146,11 @@ internal static class DevelopmentSeed
             DevelopmentSeedData.LegalName,
             DevelopmentSeedData.TradeName,
             companyEmail.Value,
+            address.Value,
             Company.DefaultTimeZoneId,
-            now);
+            now,
+            companyPhone.Value,
+            DevelopmentSeedData.CompanyStateRegistration);
 
         if (companyResult.IsFailure)
         {
@@ -190,7 +204,12 @@ internal static class DevelopmentSeed
             DevelopmentSeedData.EmployeeRegistration,
             DevelopmentSeedData.EmployeePosition,
             DateOnly.FromDateTime(now.UtcDateTime),
-            now);
+            now,
+            department: DevelopmentSeedData.EmployeeDepartment,
+            birthDate: new DateOnly(1995, 4, 12),
+            email: employeeEmail.Value,
+            phone: employeePhone.Value,
+            address: address.Value);
 
         if (employeeResult.IsFailure)
         {

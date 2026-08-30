@@ -26,6 +26,7 @@ internal static class AuthenticationSeed
             "Acme Industria Ltda",
             "Acme",
             EmailAddress.Create($"contato-{suffix}@acme.com.br").Value,
+            AddressFactory.New(),
             Company.DefaultTimeZoneId,
             now).Value;
 

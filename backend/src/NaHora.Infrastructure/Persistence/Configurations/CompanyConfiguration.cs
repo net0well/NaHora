@@ -32,6 +32,26 @@ internal sealed class CompanyConfiguration : IEntityTypeConfiguration<Company>
             .HasMaxLength(254)
             .IsRequired();
 
+        // Owned rather than a separate table: an address has no identity of
+        // its own and is never queried without the company it belongs to.
+        builder.OwnsOne(company => company.Address, address => address.ConfigureAddress());
+
+        builder.Navigation(company => company.Address).IsRequired();
+
+        builder.Property(company => company.Phone)
+            .HasConversion<NullablePhoneNumberConverter>()
+            .HasMaxLength(11);
+
+        // Free text: the format differs by state, and "ISENTO" is a legitimate
+        // entry in several of them.
+        builder.Property(company => company.StateRegistration)
+            .HasMaxLength(32);
+
+        builder.Property(company => company.MunicipalRegistration)
+            .HasMaxLength(32);
+
+        builder.Property(company => company.FoundedOn);
+
         builder.Property(company => company.TimeZoneId)
             .HasMaxLength(64)
             .IsRequired();

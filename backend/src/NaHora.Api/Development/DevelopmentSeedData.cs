@@ -22,6 +22,16 @@ internal static class DevelopmentSeedData
     public const string LegalName = "NaHora Desenvolvimento LTDA";
     public const string TradeName = "NaHora Dev";
     public const string CompanyEmail = "contato@nahora.dev";
+    public const string CompanyPhone = "1133334444";
+    public const string CompanyStateRegistration = "ISENTO";
+
+    public const string PostalCode = "01310100";
+    public const string Street = "Avenida Paulista";
+    public const string Number = "1000";
+    public const string Complement = "Conjunto 42";
+    public const string District = "Bela Vista";
+    public const string City = "São Paulo";
+    public const string State = "SP";
 
     public const string ManagerCpf = "11144477735";
     public const string ManagerName = "Marina Gestora";
@@ -33,4 +43,6 @@ internal static class DevelopmentSeedData
     public const string EmployeeEmail = "funcionaria@nahora.dev";
     public const string EmployeeRegistration = "0001";
     public const string EmployeePosition = "Operadora";
+    public const string EmployeeDepartment = "Operações";
+    public const string EmployeePhone = "11988887777";
 }
