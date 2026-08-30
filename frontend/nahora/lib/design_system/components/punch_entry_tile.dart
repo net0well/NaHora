@@ -72,11 +72,20 @@ class PunchEntryTile extends StatelessWidget {
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
-              const Spacer(),
-              Text(
-                direction,
-                style: AppTypography.labelSmall.copyWith(
-                  color: foreground.withValues(alpha: 0.75),
+              const SizedBox(width: AppSpacing.sm),
+
+              // Flexible, not a Spacer: the direction can carry a reason after
+              // it — "Entrada · Precisão baixa" — and on a phone that runs past
+              // the edge. The time keeps its full width because it is the point
+              // of the row.
+              Expanded(
+                child: Text(
+                  direction,
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: foreground.withValues(alpha: 0.75),
+                  ),
                 ),
               ),
             ],

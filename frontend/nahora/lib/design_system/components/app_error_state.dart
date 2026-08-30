@@ -33,7 +33,13 @@ class AppErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        // Horizontal padding is smaller than vertical on purpose: these states
+        // sit inside screens that already pad, and doubling it left a phone
+        // with less width than the retry button needs.
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xl,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
