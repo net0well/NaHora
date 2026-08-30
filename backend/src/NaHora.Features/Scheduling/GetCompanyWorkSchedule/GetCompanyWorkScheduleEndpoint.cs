@@ -22,7 +22,7 @@ internal sealed class GetCompanyWorkScheduleEndpoint : IEndpointGroup
                 "Quando ainda não foi definida, responde a semana sugerida marcada " +
                 "como não salva — um formulário em branco é pior ponto de partida " +
                 "que o horário que quase todo escritório usa.")
-            .Produces<GetCompanyWorkScheduleResponse>(StatusCodes.Status200OK)
+            .Produces<CompanyWorkScheduleResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized);
     }
 
@@ -30,7 +30,7 @@ internal sealed class GetCompanyWorkScheduleEndpoint : IEndpointGroup
     {
         ArgumentNullException.ThrowIfNull(bus);
 
-        var result = await bus.InvokeAsync<Shared.Results.Result<GetCompanyWorkScheduleResponse>>(
+        var result = await bus.InvokeAsync<Shared.Results.Result<CompanyWorkScheduleResponse>>(
             new GetCompanyWorkScheduleQuery(),
             cancellationToken);
 

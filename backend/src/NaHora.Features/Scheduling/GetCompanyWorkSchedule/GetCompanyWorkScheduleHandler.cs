@@ -16,7 +16,7 @@ namespace NaHora.Features.Scheduling.GetCompanyWorkSchedule;
 /// </remarks>
 public static class GetCompanyWorkScheduleHandler
 {
-    public static async Task<Result<GetCompanyWorkScheduleResponse>> Handle(
+    public static async Task<Result<CompanyWorkScheduleResponse>> Handle(
         GetCompanyWorkScheduleQuery query,
         ICurrentUser currentUser,
         ICompanyRepository companies,
@@ -36,7 +36,7 @@ public static class GetCompanyWorkScheduleHandler
 
         var week = (schedule ?? CompanyWorkSchedule.Default(companyId, clock.GetUtcNow())).Days;
 
-        return Result.Success(new GetCompanyWorkScheduleResponse(
+        return Result.Success(new CompanyWorkScheduleResponse(
             schedule is not null,
             company?.TimeZoneId ?? Company.DefaultTimeZoneId,
             [.. week.Select(WorkDayResponse.From)]));

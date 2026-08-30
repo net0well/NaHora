@@ -42,6 +42,11 @@ public static class ScheduleErrors
         "A schedule must define all seven days of the week.",
         "days");
 
+    public static Error TimeMalformed(DayOfWeek day, string value) => Error.Validation(
+        "SCHEDULE_TIME_MALFORMED",
+        $"'{value}' is not a time. Use HH:mm.",
+        Field(day));
+
     public static Error NotFound() => Error.NotFound(
         "SCHEDULE_NOT_FOUND",
         "No schedule was found.");
