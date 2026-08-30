@@ -2,7 +2,7 @@
 
 # NaHora
 
-**Controle de ponto com reconhecimento facial, anti-fraude e conformidade legal**
+**Controle de ponto por geolocalização, com modo offline e conformidade legal**
 
 [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![Flutter](https://img.shields.io/badge/Flutter-3.47-02569B)](https://flutter.dev/)
@@ -26,17 +26,24 @@ consegue contestar um registro que não fez.
 
 ### Duas decisões que definem o produto
 
-**Reconhecimento facial não basta.** Uma foto no celular de um colega derruba
-qualquer sistema que só compare rostos. Por isso a identificação é sempre
-combinada com **liveness ativo** — um desafio sorteado pelo servidor, validado
-pela sequência temporal dos landmarks — e com anti-spoofing passivo.
+**Geolocalização não identifica ninguém.** Ela diz *onde*, não *quem* — e vale
+dizer isso em voz alta em vez de vender o contrário: um funcionário que empresta
+o celular desbloqueado bate o ponto de outro, e o sistema não tem como perceber.
+O que ele faz é registrar de onde e de qual aparelho, sinalizar GPS falso quando
+detecta, e deixar o julgamento com o gestor. É uma barreira contra o
+oportunista, não contra o determinado.
 
-**Falha biométrica nunca impede o registro do ponto.** A Portaria 671, Art. 78
-§1º, veda ao registrador mecanismos que restrinjam a marcação. A biometria aqui
-classifica a **confiança** do registro, nunca a sua existência: toda marcação
-recebe NSR e entra no AFD. Uma tentativa suspeita gera evidência e vai para
-revisão humana — o fraudador consegue marcar, mas fica marcado, rastreável e
-auditável. É o oposto de um sistema que apaga a prova de que alguém trabalhou.
+**Nada impede o registro do ponto.** A Portaria 671, Art. 78 §1º, veda ao
+registrador mecanismos que restrinjam a marcação, e isso não abre exceção para
+sinal ruim nem para suspeita. GPS impreciso, sem rede, localização falsa
+detectada: em todos os casos a marcação **é gravada**, recebe NSR e entra no
+AFD — sinalizada, nunca recusada. O fraudador consegue marcar, mas fica marcado,
+rastreável e auditável. É o oposto de um sistema que apaga a prova de que alguém
+trabalhou.
+
+E a consequência disso no app: **funciona sem internet.** Marcação vai para uma
+fila local e sobe quando houver rede, com a hora ancorada num relógio que mexer
+na data do celular não afeta.
 
 ---
 
@@ -55,8 +62,8 @@ auditável. É o oposto de um sistema que apaga a prova de que alguém trabalhou
            │
     ┌──────┼──────────────┬──────────────┐
     ▼      ▼              ▼              ▼
-PostgreSQL  MinIO      RabbitMQ    ONNX Runtime
-   17     evidências   eventos     YuNet + SFace
+PostgreSQL  MinIO      RabbitMQ
+   17      anexos      eventos
 ```
 
 ### Backend — Vertical Slice
@@ -66,7 +73,7 @@ backend/src/
 ├── NaHora.Api/             endpoints, composição, middleware
 ├── NaHora.Features/        slices verticais (command, handler, endpoint)
 ├── NaHora.Domain/          entidades, value objects, regras, portas
-├── NaHora.Infrastructure/  EF Core, MinIO, RabbitMQ, ONNX, assinatura
+├── NaHora.Infrastructure/  EF Core, MinIO, RabbitMQ, assinatura
 └── NaHora.Shared/          primitivos sem dependência de domínio
 ```
 
@@ -101,22 +108,24 @@ método `ValidateFace()` que faça tudo.
 | Objetos | MinIO | AGPL-3.0 (serviço externo) |
 | Broker | RabbitMQ | MPL-2.0 |
 | Validação | FluentValidation | Apache-2.0 |
-| Inferência | ONNX Runtime | MIT |
-| Detecção facial | YuNet | Apache-2.0 |
-| Embeddings | SFace | Apache-2.0 |
+| Banco local (app) | Drift | MIT |
+| Mapa | flutter_map + MapTiler | BSD-3 / plano gratuito |
 | Frontend | Flutter + Riverpod | BSD-3 / MIT |
 | Testes | xUnit v3, Shouldly, NSubstitute, Testcontainers | Apache-2.0 / MIT |
 
-### Por que não MediatR, MassTransit ou InsightFace
+### Por que não MediatR, MassTransit ou os tiles do OpenStreetMap
 
 **MediatR v13+ e MassTransit v9 passaram a ser comerciais** (MassTransit em torno
 de US$ 400/mês). O Wolverine é MIT e cobre mediator local, RabbitMQ e outbox
 transacional num pacote só.
 
-**Os pesos do InsightFace/ArcFace/SCRFD são _non-commercial research only_.** O
-código é MIT, mas é o peso que faz o reconhecimento. Como o NaHora é comercial, a
-stack usa YuNet e SFace, ambos Apache-2.0. Detalhes e riscos conhecidos em
-[`models/README.md`](models/README.md).
+**O servidor de tiles do OpenStreetMap proíbe uso comercial.** O dado do OSM é
+livre; o serviço de tiles deles não é para produção — a política diz que o acesso
+pode ser cortado sem aviso. Um produto pago cujo mapa some não é economia. Daí o
+MapTiler, que tem licença comercial explícita.
+
+É o mesmo erro que quase cometemos antes com os pesos do InsightFace: confundir
+"dado aberto" com "serviço gratuito para uso comercial".
 
 Também estão fora: AutoMapper (comercial, e o projeto exige mapeamento manual),
 FluentAssertions v8+ (comercial) e SixLabors.ImageSharp v3+ (licença paga acima
@@ -260,21 +269,20 @@ uma senha, **não pode ser trocado depois de vazar**.
 ## Roadmap
 
 - [x] Fundação — solução, DI automática, CQRS, testes, Docker
-- [ ] Banco e infraestrutura — EF Core, migrations, MinIO, RabbitMQ
-- [ ] Autenticação — CPF + senha, JWT, refresh rotativo, permissões
-- [ ] Design System e telas base
+- [x] Banco e infraestrutura — EF Core, migrations, RabbitMQ
+- [x] Autenticação — CPF + senha, JWT, refresh rotativo, permissões
+- [x] Observabilidade, outbox, rate limiting e resiliência
+- [x] Tempo real por SSE
+- [x] Design System e regras de token
+- [ ] Marcação por geolocalização — captura, hora do servidor, GPS falso
+- [ ] Modo offline — fila local e sincronização
+- [ ] Histórico e mapa da marcação
+- [ ] Ajuste de ponto pelo gestor — tratamento, justificativas, anexo
 - [ ] Jornada de trabalho e cálculo de horas
-- [ ] Câmera e moldura facial
-- [ ] Biometria — detecção, embeddings, liveness, anti-spoofing
-- [ ] Registro de ponto e histórico
 - [ ] Eventos de segurança e revisão
 - [ ] Auditoria automática
-- [ ] Mensageria e eventos de domínio
 - [ ] Exportação CSV e Excel
 - [ ] AFD, AEJ e comprovante
-- [ ] Calibração biométrica (FAR/FRR) e endurecimento
-
----
 
 ## Licença
 
