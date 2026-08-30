@@ -29,6 +29,16 @@ public sealed class NaHoraDbContext(
 
     public DbSet<Punch> Punches => Set<Punch>();
 
+    /// <summary>
+    /// Corrections to time records.
+    /// </summary>
+    /// <remarks>
+    /// Never modifies <see cref="Punches"/>. A treatment points at a punch and
+    /// says which time should count; the punch itself is append-only, enforced
+    /// by a database trigger rather than by convention.
+    /// </remarks>
+    public DbSet<PunchAdjustment> PunchAdjustments => Set<PunchAdjustment>();
+
     /// <summary>The hours each company works by default. One row per company.</summary>
     public DbSet<CompanyWorkSchedule> CompanyWorkSchedules => Set<CompanyWorkSchedule>();
 
