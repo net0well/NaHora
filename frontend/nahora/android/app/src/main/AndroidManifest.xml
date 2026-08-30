@@ -3,10 +3,11 @@
     <!-- The API is the only network the app talks to. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Punching requires a face, so the camera is required rather than
-         optional: a device without one cannot run this app usefully. -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <!-- Location is what a punch is confirmed by, so it is required rather
+         than optional: a device without GPS cannot record a valid punch. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="true" />
 
     <!-- allowBackup is off because the session token lives in the
          Keystore-backed store, and the system backup would copy app data off

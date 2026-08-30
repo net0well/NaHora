@@ -41,6 +41,7 @@ dependencies:
   # Versão exata, não `^`: atualizar a biblioteca deve ser uma decisão,
   # nunca efeito colateral de um `pub get` (ADR-006).
   shadcn_ui: 0.56.2
+  geolocator: ^14.0.3
 
 dev_dependencies:
   flutter_test:
