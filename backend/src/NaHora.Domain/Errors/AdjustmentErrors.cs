@@ -36,6 +36,16 @@ public static class AdjustmentErrors
         "A correction cannot be for a time that has not happened yet.",
         "occurredAt");
 
+    public static Error OccurredAtRequired() => Error.Validation(
+        "ADJUSTMENT_OCCURRED_AT_REQUIRED",
+        "The time the correction should record is required.",
+        "occurredAt");
+
+    public static Error DirectionUnknown(string? value) => Error.Validation(
+        "ADJUSTMENT_DIRECTION_UNKNOWN",
+        $"'{value}' is not a punch direction.",
+        "direction");
+
     public static Error AttachmentKeyRequired() => Error.Validation(
         "ADJUSTMENT_ATTACHMENT_KEY_REQUIRED",
         "The attachment is missing.",
