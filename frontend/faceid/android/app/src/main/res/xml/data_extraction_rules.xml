@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ replacement for allowBackup. Both are declared because the
+  platform picks by API level, and leaving either at its default would let app
+  data leave the device on the versions that read the one we omitted.
+
+  Nothing is eligible: the app holds a session token and, transiently, camera
+  frames. Neither belongs in a cloud backup or on a new device the user
+  transferred to.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+        <exclude domain="file" />
+    </device-transfer>
+</data-extraction-rules>

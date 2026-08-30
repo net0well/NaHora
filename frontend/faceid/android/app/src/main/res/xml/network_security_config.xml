@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Production network policy.
+
+  Cleartext is denied outright. Biometric frames and session tokens travel on
+  this connection, and a downgrade to HTTP on a hostile network would expose
+  data that cannot be rotated after a leak the way a password can.
+
+  The debug variant relaxes this for the local development server only; it is
+  never part of a release build.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
