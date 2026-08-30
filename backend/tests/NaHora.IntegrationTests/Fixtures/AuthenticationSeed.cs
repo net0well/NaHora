@@ -20,7 +20,7 @@ internal static class AuthenticationSeed
         CancellationToken cancellationToken = default)
     {
         var cpf = DocumentFactory.NewCpf();
-        var suffix = Guid.CreateVersion7().ToString("N")[..8];
+        var suffix = DocumentFactory.NewShortSuffix();
 
         var company = Company.Register(
             Cnpj.Create(DocumentFactory.NewCnpj()).Value,

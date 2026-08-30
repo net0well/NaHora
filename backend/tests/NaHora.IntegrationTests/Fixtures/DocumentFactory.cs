@@ -110,4 +110,15 @@ internal static class DocumentFactory
 
         return new string(digits);
     }
+
+    /// <summary>
+    /// A short value that is actually distinct between two calls.
+    /// </summary>
+    /// <remarks>
+    /// The tail, never the head. A version 7 GUID starts with a timestamp, so
+    /// the first eight hex digits of two created in the same millisecond are
+    /// identical — which turned "a unique registration" into a duplicate and a
+    /// 409 that surfaced far from its cause.
+    /// </remarks>
+    public static string NewShortSuffix() => Guid.CreateVersion7().ToString("N")[^8..];
 }

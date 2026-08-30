@@ -22,7 +22,7 @@ public sealed class HireEmployeeTests(ApiFixture fixture) : IClassFixture<ApiFix
 {
     private readonly HttpClient _client = fixture.CreateClient();
 
-    public void Dispose() => StubEmailSender.Reset();
+    public void Dispose() => StubEmailSender.ResetDelivery();
 
     [Fact]
     public async Task Hire_CreatesTheEmploymentRecordAndTheAccount()
@@ -205,7 +205,7 @@ public sealed class HireEmployeeTests(ApiFixture fixture) : IClassFixture<ApiFix
             ["fullName"] = "Carlos Novo Funcionário",
             ["email"] = $"novo-{Guid.CreateVersion7():N}@nahora.dev",
             ["pis"] = DocumentFactory.NewPis(),
-            ["registration"] = Guid.CreateVersion7().ToString("N")[..8],
+            ["registration"] = DocumentFactory.NewShortSuffix(),
             ["position"] = "Auxiliar",
             ["department"] = "Operações",
             ["contractType"] = "Clt",
