@@ -85,8 +85,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
+                  // Centred under the mark, so the two read as one block
+                  // rather than as a heading with a stray line beside it.
                   Text(
-                    'Entre para marcar seu ponto',
+                    'Seu app de marcar ponto',
+                    textAlign: TextAlign.center,
                     style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
