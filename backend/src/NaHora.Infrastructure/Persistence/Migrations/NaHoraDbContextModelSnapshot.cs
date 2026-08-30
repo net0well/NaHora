@@ -24,6 +24,125 @@ namespace NaHora.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("NaHora.Domain.Adjustments.AdjustmentJustification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("description");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<bool>("RequiresNotes")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_notes");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_adjustment_justifications");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("i_x_adjustment_justifications_code");
+
+                    b.ToTable("adjustment_justifications", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0001-7000-8000-000000000001"),
+                            Code = "FORGOT_TO_PUNCH",
+                            Description = "Esquecimento de marcação",
+                            DisplayOrder = 1,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0002-7000-8000-000000000002"),
+                            Code = "DEVICE_FAILURE",
+                            Description = "Falha no aparelho ou bateria",
+                            DisplayOrder = 2,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0003-7000-8000-000000000003"),
+                            Code = "NO_CONNECTIVITY",
+                            Description = "Sem conexão no momento da marcação",
+                            DisplayOrder = 3,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0004-7000-8000-000000000004"),
+                            Code = "MEDICAL_LEAVE",
+                            Description = "Atestado médico",
+                            DisplayOrder = 4,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0005-7000-8000-000000000005"),
+                            Code = "WORK_TRAVEL",
+                            Description = "Viagem a serviço",
+                            DisplayOrder = 5,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0006-7000-8000-000000000006"),
+                            Code = "EXTERNAL_WORK",
+                            Description = "Trabalho externo sem cobertura",
+                            DisplayOrder = 6,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0007-7000-8000-000000000007"),
+                            Code = "COMPENSATORY_TIME",
+                            Description = "Compensação de horas",
+                            DisplayOrder = 7,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0008-7000-8000-000000000008"),
+                            Code = "SYSTEM_ERROR",
+                            Description = "Erro do sistema",
+                            DisplayOrder = 8,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0009-7000-8000-000000000009"),
+                            Code = "MANAGER_CORRECTION",
+                            Description = "Correção administrativa",
+                            DisplayOrder = 9,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0010-7000-8000-000000000010"),
+                            Code = "OTHER",
+                            Description = "Outro",
+                            DisplayOrder = 10,
+                            RequiresNotes = true
+                        });
+                });
+
             modelBuilder.Entity("NaHora.Domain.Attendance.CompanyNsrCounter", b =>
                 {
                     b.Property<Guid>("Id")
