@@ -91,15 +91,20 @@ internal sealed class StreamEventsEndpoint : IEndpointGroup
             return item;
         }
 
-        // Immediately, so the client learns the connection is live and the
-        // reconnection interval without waiting out the first idle period.
-        yield return Wrap(Heartbeat(companyId, clock));
-
         await using var events = source.GetAsyncEnumerator(cancellationToken);
 
-        // Held across iterations: a read may be awaited only once, and the
-        // keep-alive winning a race must not consume the read that lost it.
+        // Registration happens on the first read, and it has to happen before
+        // the client is told the stream is live. Announcing first left a window
+        // where an event published right after the greeting reached nobody: the
+        // client believed it was subscribed and the registry had never heard of
+        // it. Held across iterations too, because a read may be awaited only
+        // once and the keep-alive winning a race must not consume the read that
+        // lost it.
         var pending = events.MoveNextAsync().AsTask();
+
+        // Now that the subscription exists, say so — along with the
+        // reconnection interval, without waiting out the first idle period.
+        yield return Wrap(Heartbeat(companyId, clock));
 
         while (true)
         {
