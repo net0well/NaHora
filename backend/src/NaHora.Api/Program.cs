@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NaHora.Api.Authentication;
+using NaHora.Api.Development;
 using NaHora.Api.Diagnostics;
 using NaHora.Api.Observability;
 using NaHora.Api.OpenApi;
@@ -28,6 +29,9 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddNaHoraAuthentication(builder.Configuration, builder.Environment);
 builder.Services.AddNaHoraRateLimiting(builder.Configuration);
 builder.Services.AddNaHoraTelemetry(builder.Configuration);
+
+builder.Services.Configure<DevelopmentSeedOptions>(
+    builder.Configuration.GetSection(DevelopmentSeedOptions.SectionName));
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -124,6 +128,10 @@ builder.Host.UseWolverine(options =>
 var app = builder.Build();
 
 await DatabaseMigrator.MigrateAsync(app);
+
+// After the schema exists, and before the first request can ask for a
+// login that would otherwise have no company to authenticate against.
+await DevelopmentSeed.ApplyAsync(app);
 
 app.UseExceptionHandler();
 
