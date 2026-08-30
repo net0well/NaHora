@@ -1,7 +1,10 @@
 using FaceId.Domain.Companies;
+using FaceId.Domain.RealTime;
 using FaceId.Infrastructure.Configuration;
 using FaceId.Infrastructure.Persistence;
+using FaceId.Infrastructure.RealTime;
 using FaceId.Infrastructure.Registry;
+using FaceId.Shared.Configuration;
 using FaceId.Shared.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -60,9 +63,36 @@ public static class InfrastructureServiceRegistration
 
         AddRegistryLookup(services, configuration);
 
+        AddRealTime(services, configuration);
+
         services.AddServicesFrom(typeof(InfrastructureServiceRegistration).Assembly);
 
         return services;
+    }
+
+    /// <summary>
+    /// The registry of connected observers, behind both of its ports.
+    /// </summary>
+    /// <remarks>
+    /// Registered by hand, and it has to be: the two interfaces must resolve to
+    /// the same instance. Registering the class once per interface would give
+    /// the endpoint a registry nobody broadcasts to, and the relay a registry
+    /// nobody observes — with no error anywhere, just silence on the stream.
+    ///
+    /// Singleton because the registration outlives every request that reads it.
+    /// </remarks>
+    private static void AddRealTime(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<RealTimeOptions>()
+            .Bind(configuration.GetSection(RealTimeOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<InMemoryRealTimeObserverRegistry>();
+        services.AddSingleton<IRealTimeBroadcaster>(provider =>
+            provider.GetRequiredService<InMemoryRealTimeObserverRegistry>());
+        services.AddSingleton<IRealTimeObserverRegistry>(provider =>
+            provider.GetRequiredService<InMemoryRealTimeObserverRegistry>());
     }
 
     /// <summary>

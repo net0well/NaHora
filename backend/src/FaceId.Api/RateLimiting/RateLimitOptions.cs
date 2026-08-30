@@ -29,4 +29,14 @@ public sealed class RateLimitOptions
 
     [Range(1, 100)]
     public int ExportPerHour { get; init; } = 10;
+
+    /// <summary>
+    /// Live streams a single user may hold open at once.
+    /// </summary>
+    /// <remarks>
+    /// More than one is legitimate — a manager with the dashboard open in two
+    /// windows. Many is a client leaking connections.
+    /// </remarks>
+    [Range(1, 20)]
+    public int ConcurrentEventStreams { get; init; } = 3;
 }

@@ -1,3 +1,5 @@
+using FaceId.Domain.Abstractions;
+
 namespace FaceId.Domain.Users.Events;
 
 /// <summary>
@@ -13,4 +15,4 @@ public sealed record RefreshTokenReuseDetected(
     Guid UserId,
     Guid FamilyId,
     int TokensRevoked,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt) : IAuditableEvent;

@@ -144,6 +144,31 @@ o conhece**. Se um `Strategy` tem uma implementação só, é uma interface a ma
 uma indireção a menos de clareza. O sufixo só entra quando o padrão está mesmo
 lá.
 
+### Uma fila, uma responsabilidade
+
+Nunca uma fila só para tudo. Cada fila carrega **um tipo de trabalho**, e a
+divisão segue o **contrato de entrega** — não a feature —, porque é isso que
+obriga infraestrutura diferente:
+
+| Fila | Contrato | Durável | Consumo |
+|------|----------|---------|---------|
+| `faceid.audit` | precisa ser registrado | sim | concorrente, uma vez |
+| `faceid.realtime.<instância>` | precisa chegar agora ou não vale nada | não | uma cópia por instância |
+
+Uma fila compartilhada faz coisas independentes dividirem o mesmo destino: uma
+mensagem envenenada trava a fila e para entregas que nada tinham a ver com ela,
+um consumidor lento adiciona latência a todos os outros, e a métrica de
+profundidade não responde nada porque mistura trabalho que devia ser instantâneo
+com trabalho que pode levar um minuto.
+
+O roteamento é **por contrato, não por nome**: o evento declara de que entrega
+precisa implementando um marcador (`IAuditableEvent`), nunca por convenção de
+namespace — string de namespace faz um rename parar a entrega sem quebrar a
+compilação.
+
+Ao criar uma fila nova, a pergunta é: *o que acontece se esta mensagem se
+perder?* Se a resposta for diferente da de uma fila existente, é outra fila.
+
 ### Aggregate root explícito na declaração
 
 A distinção fica visível na assinatura da classe, sem precisar abrir mais nada:
