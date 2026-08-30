@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using NaHora.IntegrationTests.Contracts;
 using NaHora.IntegrationTests.Fixtures;
@@ -66,5 +67,29 @@ public sealed class HealthAndDiagnosticsTests(ApiFixture fixture) : IClassFixtur
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         body.ShouldNotContain("at NaHora.");
         body.ShouldNotContain("Exception");
+    }
+
+    [Fact]
+    public async Task MalformedBody_WhenPosted_ReturnsBadRequestRatherThanServerError()
+    {
+        // Arrange — a body the parser cannot read is the caller's mistake.
+        // Reported as ours it would be a 500 in the metrics and an Error in the
+        // log for every malformed request a client cares to send.
+        using var content = new StringContent("{ not json", Encoding.UTF8, "application/json");
+
+        // Act
+        var response = await _client.PostAsync(new Uri("/api/v1/auth/login", UriKind.Relative), content, TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+        using var document = JsonDocument.Parse(body);
+        document.RootElement.GetProperty("code").GetString().ShouldBe("MALFORMED_REQUEST");
+
+        // The parser names the parameter and the byte it stopped at, which says
+        // more about the contract than the contract does.
+        body.ShouldNotContain("LineNumber");
+        body.ShouldNotContain("at NaHora.");
     }
 }
