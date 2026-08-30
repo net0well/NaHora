@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/auth_providers.dart';
 import '../../features/auth/presentation/auth_state.dart';
+import '../../features/attendance/presentation/punch_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 
@@ -43,6 +44,11 @@ abstract final class AppRouter {
           name: 'dashboard',
           builder: (context, state) => const HomeScreen(),
         ),
+        GoRoute(
+          path: AppRoutes.attendance,
+          name: 'attendance',
+          builder: (context, state) => const PunchScreen(),
+        ),
       ],
     );
   }
@@ -60,9 +66,12 @@ abstract final class AppRouter {
 
       AuthSignedOut() => location == AppRoutes.login ? null : AppRoutes.login,
 
+      // Straight to the punch screen: it is what the employee opened the app
+      // for, and a dashboard in between would be a tap between them and the
+      // one thing they came to do.
       AuthSignedIn() =>
         location == AppRoutes.login || location == AppRoutes.splash
-            ? AppRoutes.dashboard
+            ? AppRoutes.attendance
             : null,
     };
   }
