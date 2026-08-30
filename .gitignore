@@ -106,6 +106,12 @@ biometric-dataset/
 !frontend/faceid/assets/**/*.png
 !docs/**/*.png
 
+# Android app resources — launcher icons and the like. Never biometric data,
+# and the build fails without them: the blanket rule above was dropping the
+# launcher icon, which builds fine on a machine that has it on disk and fails
+# in CI on a clean checkout.
+!frontend/faceid/android/app/src/**/res/**
+
 # ---------------------------------------------------------------------------
 # Sistema operacional
 # ---------------------------------------------------------------------------
