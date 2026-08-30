@@ -116,7 +116,13 @@ public static class InfrastructureServiceRegistration
         var registry = configuration.GetSection(RegistryOptions.SectionName).Get<RegistryOptions>()
                        ?? new RegistryOptions();
 
-        services.AddHttpClient<ICompanyRegistryLookup, BrasilApiCompanyRegistryLookup>(client =>
+        // A named client, not a typed one. A typed client registers the
+        // interface through a factory lambda, which Wolverine cannot call from
+        // generated code — and it finds out only when the first message
+        // arrives, so the failure lands on a request rather than at startup.
+        services.AddScoped<ICompanyRegistryLookup, BrasilApiCompanyRegistryLookup>();
+
+        services.AddHttpClient(BrasilApiCompanyRegistryLookup.HttpClientName, client =>
             {
                 client.BaseAddress = new Uri(registry.BaseUrl);
                 client.Timeout = TimeSpan.FromSeconds(registry.TotalTimeoutSeconds);
