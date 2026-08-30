@@ -64,11 +64,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // The mark carries the name, so there is no separate title.
+                  // Printing "NaHora" underneath would say it twice.
+                  //
+                  // Rounded because the artwork has its own opaque, darker
+                  // ground: left square it reads as a mismatched block over the
+                  // page, and as a deliberate tile once the corners are cut.
                   Semantics(
                     header: true,
-                    child: Text('NaHora', style: AppTypography.displayLarge),
+                    label: 'NaHora',
+                    child: ExcludeSemantics(
+                      child: Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          child: Image.asset(
+                            'assets/images/nahora-logo.png',
+                            key: const Key('login_logo'),
+                            height: 180,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.lg),
                   Text(
                     'Entre para marcar seu ponto',
                     style: AppTypography.bodyMedium.copyWith(
