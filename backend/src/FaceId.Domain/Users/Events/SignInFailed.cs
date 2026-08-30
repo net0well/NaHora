@@ -1,3 +1,5 @@
+using FaceId.Domain.Abstractions;
+
 namespace FaceId.Domain.Users.Events;
 
 /// <summary>A sign-in attempt was rejected.</summary>
@@ -10,4 +12,4 @@ public sealed record SignInFailed(
     Guid CompanyId,
     Guid? UserId,
     string? IpAddress,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt) : IAuditableEvent;

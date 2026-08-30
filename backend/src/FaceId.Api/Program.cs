@@ -3,6 +3,8 @@ using FaceId.Api.Diagnostics;
 using FaceId.Api.Observability;
 using FaceId.Api.OpenApi;
 using FaceId.Api.RateLimiting;
+using FaceId.Domain.Abstractions;
+using FaceId.Domain.RealTime;
 using FaceId.Features;
 using FaceId.Infrastructure;
 using FaceId.Infrastructure.Configuration;
@@ -63,6 +65,9 @@ builder.Host.UseWolverine(options =>
 
     if (messaging.Enabled)
     {
+        var topology = messaging.Topology;
+        var realTimeQueue = topology.ResolveRealTimeQueue();
+
         options.UseRabbitMq(factory =>
             {
                 factory.HostName = messaging.Host;
@@ -72,17 +77,47 @@ builder.Host.UseWolverine(options =>
                 factory.VirtualHost = messaging.VirtualHost;
             })
             .AutoProvision()
-            .BindExchange(messaging.Exchange)
-            .ToQueue(messaging.Queue);
 
-        // Publishing alone is half a pipeline: without a bound queue and a
-        // listener the message leaves and nothing brings it back, so the
-        // consumer never runs. The exchange fans out, the queue holds, and the
-        // listener delivers to the handler.
-        options.PublishAllMessages().ToRabbitExchange(messaging.Exchange);
+            // Durable and shared. Instances compete for each message, because
+            // one audit record per instance would be the same event recorded
+            // three times.
+            .BindExchange(topology.AuditExchange).ToQueue(topology.AuditQueue)
 
-        options.ListenToRabbitQueue(messaging.Queue)
+            // Private to this instance, so every instance receives every live
+            // update and can reach the observers connected to it. This is the
+            // fan-out, and it is why no shared backplane is needed.
+            .BindExchange(topology.RealTimeExchange).ToQueue(realTimeQueue, queue =>
+            {
+                // Dies with the process. A crashed instance leaves no queue
+                // behind slowly filling with messages nobody will ever read.
+                queue.AutoDelete = true;
+                queue.IsExclusive = true;
+                queue.IsDurable = false;
+            });
+
+        // Routed by contract rather than by name: an event says which delivery
+        // it needs by the marker it implements, so a rename cannot quietly
+        // reroute it into the wrong queue.
+        options.Publish(rule => rule.MessagesImplementing<IAuditableEvent>()
+            .ToRabbitExchange(topology.AuditExchange));
+
+        options.Publish(rule => rule.Message<RealTimeEvent>()
+            .ToRabbitExchange(topology.RealTimeExchange));
+
+        // The audit stream is worth retrying and worth remembering across a
+        // restart, so it goes through the durable inbox.
+        options.ListenToRabbitQueue(topology.AuditQueue)
             .UseDurableInbox();
+
+        // The live stream is not. A retried update is a stale update, and
+        // persisting one to survive a restart delivers it to observers who
+        // disconnected when the process did.
+        options.ListenToRabbitQueue(realTimeQueue, queue =>
+        {
+            queue.AutoDelete = true;
+            queue.IsExclusive = true;
+            queue.IsDurable = false;
+        }).BufferedInMemory();
     }
 });
 

@@ -1,3 +1,5 @@
+using FaceId.Domain.Abstractions;
+
 namespace FaceId.Domain.Users.Events;
 
 /// <summary>A sign-in succeeded.</summary>
@@ -10,4 +12,4 @@ public sealed record UserSignedIn(
     Guid CompanyId,
     Guid UserId,
     string Role,
-    DateTimeOffset OccurredAt);
+    DateTimeOffset OccurredAt) : IAuditableEvent;
