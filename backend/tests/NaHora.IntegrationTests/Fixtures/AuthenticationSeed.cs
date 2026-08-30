@@ -16,6 +16,7 @@ internal static class AuthenticationSeed
         NaHoraDbContext dbContext,
         IPasswordHasher passwordHasher,
         DateTimeOffset now,
+        UserRole role = UserRole.Administrator,
         CancellationToken cancellationToken = default)
     {
         var cpf = DocumentFactory.NewCpf();
@@ -38,7 +39,7 @@ internal static class AuthenticationSeed
             "Maria Souza",
             EmailAddress.Create($"maria.souza-{suffix}@acme.com.br").Value,
             passwordHasher.Hash(Password),
-            UserRole.Administrator,
+            role,
             mustChangePassword: false,
             now).Value;
 
