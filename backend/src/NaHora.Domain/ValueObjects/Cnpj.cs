@@ -28,6 +28,10 @@ public readonly record struct Cnpj
     /// exception: a mistyped document is an expected outcome of a form, not an
     /// exceptional condition.
     /// </summary>
+    /// <summary>"11.222.333/0001-81"</summary>
+    public string Formatted =>
+        $"{Value[..2]}.{Value[2..5]}.{Value[5..8]}/{Value[8..12]}-{Value[12..]}";
+
     public static Result<Cnpj> Create(string? input, string? field = null) =>
         TryParse(input, out var cnpj)
             ? Result.Success(cnpj)

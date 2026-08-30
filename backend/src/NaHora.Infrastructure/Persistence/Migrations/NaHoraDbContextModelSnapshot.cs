@@ -24,6 +24,125 @@ namespace NaHora.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("NaHora.Domain.Adjustments.AdjustmentJustification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("code");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("description");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("display_order");
+
+                    b.Property<bool>("RequiresNotes")
+                        .HasColumnType("boolean")
+                        .HasColumnName("requires_notes");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_adjustment_justifications");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("i_x_adjustment_justifications_code");
+
+                    b.ToTable("adjustment_justifications", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0001-7000-8000-000000000001"),
+                            Code = "FORGOT_TO_PUNCH",
+                            Description = "Esquecimento de marcação",
+                            DisplayOrder = 1,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0002-7000-8000-000000000002"),
+                            Code = "DEVICE_FAILURE",
+                            Description = "Falha no aparelho ou bateria",
+                            DisplayOrder = 2,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0003-7000-8000-000000000003"),
+                            Code = "NO_CONNECTIVITY",
+                            Description = "Sem conexão no momento da marcação",
+                            DisplayOrder = 3,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0004-7000-8000-000000000004"),
+                            Code = "MEDICAL_LEAVE",
+                            Description = "Atestado médico",
+                            DisplayOrder = 4,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0005-7000-8000-000000000005"),
+                            Code = "WORK_TRAVEL",
+                            Description = "Viagem a serviço",
+                            DisplayOrder = 5,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0006-7000-8000-000000000006"),
+                            Code = "EXTERNAL_WORK",
+                            Description = "Trabalho externo sem cobertura",
+                            DisplayOrder = 6,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0007-7000-8000-000000000007"),
+                            Code = "COMPENSATORY_TIME",
+                            Description = "Compensação de horas",
+                            DisplayOrder = 7,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0008-7000-8000-000000000008"),
+                            Code = "SYSTEM_ERROR",
+                            Description = "Erro do sistema",
+                            DisplayOrder = 8,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0009-7000-8000-000000000009"),
+                            Code = "MANAGER_CORRECTION",
+                            Description = "Correção administrativa",
+                            DisplayOrder = 9,
+                            RequiresNotes = false
+                        },
+                        new
+                        {
+                            Id = new Guid("0195f3a1-0010-7000-8000-000000000010"),
+                            Code = "OTHER",
+                            Description = "Outro",
+                            DisplayOrder = 10,
+                            RequiresNotes = true
+                        });
+                });
+
             modelBuilder.Entity("NaHora.Domain.Attendance.CompanyNsrCounter", b =>
                 {
                     b.Property<Guid>("Id")
@@ -203,15 +322,34 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(254)")
                         .HasColumnName("email");
 
+                    b.Property<DateOnly?>("FoundedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("founded_on");
+
                     b.Property<string>("LegalName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("legal_name");
 
+                    b.Property<string>("MunicipalRegistration")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("municipal_registration");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("phone");
+
                     b.Property<bool>("RegistryVerified")
                         .HasColumnType("boolean")
                         .HasColumnName("registry_verified");
+
+                    b.Property<string>("StateRegistration")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("state_registration");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -250,9 +388,19 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date")
+                        .HasColumnName("birth_date");
+
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid")
                         .HasColumnName("company_id");
+
+                    b.Property<string>("ContractType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("contract_type");
 
                     b.Property<string>("Cpf")
                         .IsRequired()
@@ -264,6 +412,16 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("Department")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("department");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -273,6 +431,11 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("HiredAt")
                         .HasColumnType("date")
                         .HasColumnName("hired_at");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(11)
+                        .HasColumnType("character varying(11)")
+                        .HasColumnName("phone");
 
                     b.Property<string>("Pis")
                         .HasMaxLength(11)
@@ -578,6 +741,68 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         .HasConstraintName("f_k_punches_employees_employee_id");
                 });
 
+            modelBuilder.Entity("NaHora.Domain.Companies.Company", b =>
+                {
+                    b.OwnsOne("NaHora.Domain.ValueObjects.Address", "Address", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasMaxLength(120)
+                                .HasColumnType("character varying(120)")
+                                .HasColumnName("city");
+
+                            b1.Property<string>("Complement")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("complement");
+
+                            b1.Property<string>("District")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("district");
+
+                            b1.Property<string>("Number")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("number");
+
+                            b1.Property<string>("PostalCode")
+                                .IsRequired()
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("postal_code");
+
+                            b1.Property<string>("State")
+                                .IsRequired()
+                                .HasMaxLength(2)
+                                .HasColumnType("character varying(2)")
+                                .HasColumnName("state");
+
+                            b1.Property<string>("Street")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("street");
+
+                            b1.HasKey("Id")
+                                .HasName("p_k_companies");
+
+                            b1.ToTable("companies");
+
+                            b1.WithOwner()
+                                .HasForeignKey("Id")
+                                .HasConstraintName("f_k_companies_companies_id");
+                        });
+
+                    b.Navigation("Address")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("NaHora.Domain.Employees.Employee", b =>
                 {
                     b.HasOne("NaHora.Domain.Companies.Company", null)
@@ -593,6 +818,64 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("f_k_employees_users_user_id");
+
+                    b.OwnsOne("NaHora.Domain.ValueObjects.Address", "Address", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasMaxLength(120)
+                                .HasColumnType("character varying(120)")
+                                .HasColumnName("city");
+
+                            b1.Property<string>("Complement")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("complement");
+
+                            b1.Property<string>("District")
+                                .HasMaxLength(100)
+                                .HasColumnType("character varying(100)")
+                                .HasColumnName("district");
+
+                            b1.Property<string>("Number")
+                                .IsRequired()
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("number");
+
+                            b1.Property<string>("PostalCode")
+                                .IsRequired()
+                                .HasMaxLength(8)
+                                .HasColumnType("character varying(8)")
+                                .HasColumnName("postal_code");
+
+                            b1.Property<string>("State")
+                                .IsRequired()
+                                .HasMaxLength(2)
+                                .HasColumnType("character varying(2)")
+                                .HasColumnName("state");
+
+                            b1.Property<string>("Street")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("character varying(200)")
+                                .HasColumnName("street");
+
+                            b1.HasKey("Id")
+                                .HasName("p_k_employees");
+
+                            b1.ToTable("employees");
+
+                            b1.WithOwner()
+                                .HasForeignKey("Id")
+                                .HasConstraintName("f_k_employees_employees_id");
+                        });
+
+                    b.Navigation("Address");
                 });
 
             modelBuilder.Entity("NaHora.Domain.Users.RefreshToken", b =>

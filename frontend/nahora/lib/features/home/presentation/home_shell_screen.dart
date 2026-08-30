@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/routing/app_router.dart';
 import '../../../design_system/components/app_tab_shell.dart';
+import '../../attendance/presentation/attendance_providers.dart';
 import 'employee_tab.dart';
 import 'history_tab.dart';
 
@@ -22,12 +23,30 @@ class HomeShellScreen extends ConsumerStatefulWidget {
 class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
   AppTab _tab = AppTab.employee;
 
+  /// Opens the punch screen and reloads what it may have changed.
+  ///
+  /// The refresh is explicit rather than left to auto-disposal: the punch
+  /// screen is pushed on top of this one, so the tab underneath stays mounted
+  /// and its providers are never dropped. Without this the employee returns
+  /// from a confirmed punch to a list that does not contain it.
+  Future<void> _punchThenRefresh() async {
+    await context.push(AppRoutes.attendance);
+
+    if (!mounted) {
+      return;
+    }
+
+    ref
+      ..invalidate(punchDayProvider)
+      ..invalidate(punchHistoryProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppTabShell(
       currentTab: _tab,
       onTabSelected: (tab) => setState(() => _tab = tab),
-      onPrimaryAction: () => context.push(AppRoutes.attendance),
+      onPrimaryAction: _punchThenRefresh,
 
       // A clock, not a fingerprint. The product confirms by location and reads
       // no biometrics; an icon suggesting otherwise would promise something it

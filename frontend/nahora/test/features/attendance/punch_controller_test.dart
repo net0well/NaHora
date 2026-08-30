@@ -1,13 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nahora/core/errors/app_exception.dart';
-import 'package:nahora/features/attendance/data/attendance_repository.dart';
 import 'package:nahora/features/attendance/domain/captured_location.dart';
 import 'package:nahora/features/attendance/domain/location_provider.dart';
-import 'package:nahora/features/attendance/domain/punch_direction.dart';
-import 'package:nahora/features/attendance/domain/punch_receipt.dart';
 import 'package:nahora/features/attendance/presentation/attendance_providers.dart';
 import 'package:nahora/features/attendance/presentation/punch_state.dart';
+
+import '../../support/fake_attendance_repository.dart';
 
 /// The state machine behind the punch button.
 ///
@@ -17,11 +16,11 @@ import 'package:nahora/features/attendance/presentation/punch_state.dart';
 void main() {
   group('PunchController', () {
     late _FakeLocationProvider location;
-    late _FakeAttendanceRepository repository;
+    late FakeAttendanceRepository repository;
 
     setUp(() {
       location = _FakeLocationProvider();
-      repository = _FakeAttendanceRepository();
+      repository = FakeAttendanceRepository();
     });
 
     ProviderContainer buildContainer() {
@@ -166,7 +165,10 @@ void main() {
         expect(repository.sentDeviceClocks, hasLength(1));
         final confirmed =
             container.read(punchControllerProvider) as PunchConfirmed;
-        expect(confirmed.receipt.occurredAt, repository.serverStamp);
+        expect(
+          confirmed.receipt.occurredAt,
+          FakeAttendanceRepository.serverStamp,
+        );
       },
     );
 
@@ -258,42 +260,5 @@ class _FakeLocationProvider implements LocationProvider {
     }
 
     return position!;
-  }
-}
-
-class _FakeAttendanceRepository implements AttendanceRepository {
-  final DateTime serverStamp = DateTime.utc(2026, 8, 30, 17, 32);
-
-  final List<CapturedLocation> sentLocations = [];
-  final List<DateTime> sentDeviceClocks = [];
-
-  AppException? failure;
-
-  @override
-  Future<ServerTime> serverTime() async =>
-      ServerTime(utc: serverStamp, utcOffset: const Duration(hours: -3));
-
-  @override
-  Future<PunchReceipt> registerPunch({
-    required String clientId,
-    required CapturedLocation location,
-    required String deviceId,
-    required DateTime deviceClockAt,
-  }) async {
-    if (failure != null) {
-      throw failure!;
-    }
-
-    sentLocations.add(location);
-    sentDeviceClocks.add(deviceClockAt);
-
-    return PunchReceipt(
-      id: 'punch-1',
-      nsr: 1,
-      direction: PunchDirection.entry,
-      occurredAt: serverStamp,
-      trust: 'Trusted',
-      alreadyRegistered: false,
-    );
   }
 }

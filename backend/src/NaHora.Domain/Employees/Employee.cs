@@ -27,7 +27,13 @@ public sealed class Employee : AggregateRoot, ITenantOwned
         string registration,
         string? position,
         DateOnly hiredAt,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        EmployeeContractType contractType,
+        string? department,
+        DateOnly? birthDate,
+        EmailAddress? email,
+        PhoneNumber? phone,
+        Address? address)
     {
         CompanyId = companyId;
         UserId = userId;
@@ -39,6 +45,12 @@ public sealed class Employee : AggregateRoot, ITenantOwned
         HiredAt = hiredAt;
         Status = EmployeeStatus.Active;
         CreatedAt = createdAt;
+        ContractType = contractType;
+        Department = department;
+        BirthDate = birthDate;
+        Email = email;
+        Phone = phone;
+        Address = address;
     }
 
     public Guid CompanyId { get; private set; }
@@ -58,7 +70,29 @@ public sealed class Employee : AggregateRoot, ITenantOwned
 
     public string Registration { get; private set; }
 
+    /// <summary>Cargo.</summary>
     public string? Position { get; private set; }
+
+    /// <summary>Setor.</summary>
+    public string? Department { get; private set; }
+
+    public EmployeeContractType ContractType { get; private set; }
+
+    public DateOnly? BirthDate { get; private set; }
+
+    /// <summary>
+    /// Contact details, all optional.
+    /// </summary>
+    /// <remarks>
+    /// A hire is not blocked for a missing phone or address. The same principle
+    /// as the PIS: an incomplete record surfaces as something to finish, never
+    /// as a reason somebody cannot be registered or cannot punch.
+    /// </remarks>
+    public EmailAddress? Email { get; private set; }
+
+    public PhoneNumber? Phone { get; private set; }
+
+    public Address? Address { get; private set; }
 
     public DateOnly HiredAt { get; private set; }
 
@@ -80,7 +114,13 @@ public sealed class Employee : AggregateRoot, ITenantOwned
         string registration,
         string? position,
         DateOnly hiredAt,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        EmployeeContractType contractType = EmployeeContractType.Clt,
+        string? department = null,
+        DateOnly? birthDate = null,
+        EmailAddress? email = null,
+        PhoneNumber? phone = null,
+        Address? address = null)
     {
         var errors = new List<Error>();
 
@@ -118,8 +158,52 @@ public sealed class Employee : AggregateRoot, ITenantOwned
             registration.Trim(),
             position?.Trim(),
             hiredAt,
-            createdAt);
+            createdAt,
+            contractType,
+            NullIfBlank(department),
+            birthDate,
+            email,
+            phone,
+            address);
     }
+
+    /// <summary>
+    /// Updates the details a manager may correct without ending the contract.
+    /// </summary>
+    /// <remarks>
+    /// CPF and PIS are absent on purpose. Both already appear in exported AFD
+    /// files, and rewriting one would leave the export disagreeing with the
+    /// record it was generated from.
+    /// </remarks>
+    public Result UpdateProfile(
+        string fullName,
+        string? position,
+        string? department,
+        EmployeeContractType contractType,
+        DateOnly? birthDate,
+        EmailAddress? email,
+        PhoneNumber? phone,
+        Address? address)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return Result.Failure(EmployeeErrors.NameRequired());
+        }
+
+        FullName = fullName.Trim();
+        Position = position?.Trim();
+        Department = NullIfBlank(department);
+        ContractType = contractType;
+        BirthDate = birthDate;
+        Email = email;
+        Phone = phone;
+        Address = address;
+
+        return Result.Success();
+    }
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     public Result PutOnLeave()
     {

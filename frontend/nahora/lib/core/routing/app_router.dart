@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../config/app_config.dart';
 import '../../features/auth/presentation/auth_providers.dart';
 import '../../features/auth/presentation/auth_state.dart';
 import '../../features/attendance/presentation/punch_screen.dart';
@@ -35,8 +36,13 @@ abstract final class AppRouter {
         GoRoute(
           path: AppRoutes.login,
           name: 'login',
+          // Falls back to the build's configured company. Without one the
+          // screen has nothing to authenticate against, and the failure would
+          // read as wrong credentials rather than a missing setting.
           builder: (context, state) => LoginScreen(
-            companyId: state.uri.queryParameters['company'] ?? '',
+            companyId:
+                state.uri.queryParameters['company'] ??
+                AppConfig.defaultCompanyId,
           ),
         ),
         GoRoute(

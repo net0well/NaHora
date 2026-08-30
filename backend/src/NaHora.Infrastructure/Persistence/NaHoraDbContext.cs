@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using NaHora.Domain.Abstractions;
+using NaHora.Domain.Adjustments;
 using NaHora.Domain.Attendance;
 using NaHora.Domain.Companies;
 using NaHora.Domain.Employees;
@@ -26,6 +27,15 @@ public sealed class NaHoraDbContext(
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<Punch> Punches => Set<Punch>();
+
+    /// <summary>
+    /// The fixed catalogue of reasons a punch may be corrected for.
+    /// </summary>
+    /// <remarks>
+    /// Not tenant-filtered: the catalogue is the product's, shared by every
+    /// company, and seeded in a migration rather than written at runtime.
+    /// </remarks>
+    public DbSet<AdjustmentJustification> AdjustmentJustifications => Set<AdjustmentJustification>();
 
     /// <summary>
     /// NSR counters. Not tenant-filtered: the counter is read by primary key
