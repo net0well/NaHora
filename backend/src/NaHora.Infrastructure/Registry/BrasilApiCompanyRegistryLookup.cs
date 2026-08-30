@@ -1,8 +1,8 @@
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
-using System.Net.Http;
 using NaHora.Domain.Companies;
 using NaHora.Domain.ValueObjects;
 
