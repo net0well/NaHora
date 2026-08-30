@@ -3,6 +3,7 @@ using NaHora.Domain.Companies;
 using NaHora.Domain.Errors;
 using NaHora.Domain.Users;
 using NaHora.Domain.ValueObjects;
+using NaHora.Features.Common;
 using NaHora.Shared.Results;
 
 namespace NaHora.Features.Companies.RegisterCompany;

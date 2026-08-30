@@ -1,3 +1,5 @@
+using NaHora.Features.Common;
+
 namespace NaHora.Features.Companies.RegisterCompany;
 
 /// <summary>
