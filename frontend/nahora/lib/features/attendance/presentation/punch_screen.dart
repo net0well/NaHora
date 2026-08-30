@@ -103,10 +103,15 @@ class _PunchFlow extends StatelessWidget {
             _ => null,
           },
           isDegraded: state is PunchLowAccuracy,
+
+          // PunchFailed included: a failure leaves no reading, and the preview
+          // must not go on showing a confirmation next to the error explaining
+          // that there is none.
           isUnavailable:
               state is PunchLocationUnavailable ||
               state is PunchLocating ||
-              state is PunchPermissionDenied,
+              state is PunchPermissionDenied ||
+              state is PunchFailed,
         ),
         const SizedBox(height: AppSpacing.md),
         _StateMessage(state: state),

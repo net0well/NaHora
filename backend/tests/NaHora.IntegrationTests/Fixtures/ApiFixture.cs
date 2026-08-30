@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using NaHora.Api.Development;
+using NaHora.Domain.Companies;
 using NaHora.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -34,6 +36,19 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
         builder.UseEnvironment(Environments.Development);
 
+        // UseSetting rather than an added configuration source: rate limiting
+        // reads the section directly at registration time, before any options
+        // override could apply.
+        //
+        // The suite signs in far more often per minute than any office would,
+        // and every request arrives from the same loopback address. Left at
+        // production values the limiter starts refusing logins partway through
+        // a run, and unrelated tests fail for a reason that is not theirs. The
+        // limiter's own behaviour belongs in a test that asks for it.
+        builder.UseSetting("RateLimiting:LoginPerMinute", "1000");
+        builder.UseSetting("RateLimiting:GlobalPerMinute", "10000");
+        builder.UseSetting("RateLimiting:CompanyRegistrationPerHour", "100");
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<NaHoraDbContext>>();
@@ -41,6 +56,18 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
 
             services.AddDbContext<NaHoraDbContext>(options =>
                 options.UseNpgsql(_postgres.GetConnectionString()));
+
+            // The seed is switched on in appsettings.Development.json, which
+            // this host loads. A shared company appearing in every test makes
+            // counts depend on execution order. Configured last, so it wins.
+            services.Configure<DevelopmentSeedOptions>(options => options.Enabled = false);
+
+            // The real lookup calls BrasilAPI. Left in place, whether a
+            // registration test passes depends on whether the runner has
+            // internet — the CNPJs these tests generate are valid in shape and
+            // belong to nobody.
+            services.RemoveAll<ICompanyRegistryLookup>();
+            services.AddScoped<ICompanyRegistryLookup, StubCompanyRegistryLookup>();
         });
     }
 

@@ -25,6 +25,15 @@ public readonly record struct Cpf
     /// exception: a mistyped document is an expected outcome of a form, not an
     /// exceptional condition.
     /// </summary>
+    /// <summary>"529.982.247-25"</summary>
+    /// <remarks>
+    /// Every screen that shows a CPF shows it punctuated. Formatting once here
+    /// beats formatting it again in the app, the export and the report — and
+    /// the stored value stays digits only, so two spellings still compare
+    /// equal.
+    /// </remarks>
+    public string Formatted => $"{Value[..3]}.{Value[3..6]}.{Value[6..9]}-{Value[9..]}";
+
     public static Result<Cpf> Create(string? input, string? field = null) =>
         TryParse(input, out var cpf)
             ? Result.Success(cpf)

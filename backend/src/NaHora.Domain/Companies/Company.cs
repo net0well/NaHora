@@ -18,6 +18,7 @@ public sealed class Company : AggregateRoot
     {
         LegalName = string.Empty;
         TimeZoneId = DefaultTimeZoneId;
+        Address = null!;
     }
 
     private Company(
@@ -25,16 +26,26 @@ public sealed class Company : AggregateRoot
         string legalName,
         string? tradeName,
         EmailAddress email,
+        Address address,
         string timeZoneId,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        PhoneNumber? phone,
+        string? stateRegistration,
+        string? municipalRegistration,
+        DateOnly? foundedOn)
     {
         Cnpj = cnpj;
         LegalName = legalName;
         TradeName = tradeName;
         Email = email;
+        Address = address;
         TimeZoneId = timeZoneId;
         Status = CompanyStatus.PendingEmailConfirmation;
         CreatedAt = createdAt;
+        Phone = phone;
+        StateRegistration = stateRegistration;
+        MunicipalRegistration = municipalRegistration;
+        FoundedOn = foundedOn;
     }
 
     public Cnpj Cnpj { get; private set; }
@@ -44,6 +55,32 @@ public sealed class Company : AggregateRoot
     public string? TradeName { get; private set; }
 
     public EmailAddress Email { get; private set; }
+
+    /// <summary>
+    /// Where the establishment is registered.
+    /// </summary>
+    /// <remarks>
+    /// Not a punch location and never compared against one. An employee working
+    /// externally punches far from here by design, and treating this as a fence
+    /// would be exactly the restriction Art. 78 forbids.
+    /// </remarks>
+    public Address Address { get; private set; }
+
+    public PhoneNumber? Phone { get; private set; }
+
+    /// <summary>
+    /// Inscrição estadual, or null when the company is exempt.
+    /// </summary>
+    /// <remarks>
+    /// Free text rather than a validated value object: the format differs by
+    /// state, and "ISENTO" is a legitimate entry in several of them.
+    /// </remarks>
+    public string? StateRegistration { get; private set; }
+
+    /// <summary>Inscrição municipal, or null when there is none.</summary>
+    public string? MunicipalRegistration { get; private set; }
+
+    public DateOnly? FoundedOn { get; private set; }
 
     /// <summary>
     /// IANA identifier. Brazil spans four time zones, so comparing a punch
@@ -78,9 +115,16 @@ public sealed class Company : AggregateRoot
         string legalName,
         string? tradeName,
         EmailAddress email,
+        Address address,
         string timeZoneId,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        PhoneNumber? phone = null,
+        string? stateRegistration = null,
+        string? municipalRegistration = null,
+        DateOnly? foundedOn = null)
     {
+        ArgumentNullException.ThrowIfNull(address);
+
         var errors = new List<Error>();
 
         if (string.IsNullOrWhiteSpace(legalName))
@@ -98,7 +142,18 @@ public sealed class Company : AggregateRoot
             return Result.Failure<Company>(errors);
         }
 
-        return new Company(cnpj, legalName.Trim(), tradeName?.Trim(), email, timeZoneId, createdAt);
+        return new Company(
+            cnpj,
+            legalName.Trim(),
+            tradeName?.Trim(),
+            email,
+            address,
+            timeZoneId,
+            createdAt,
+            phone,
+            NullIfBlank(stateRegistration),
+            NullIfBlank(municipalRegistration),
+            foundedOn);
     }
 
     public Result ConfirmEmail(DateTimeOffset confirmedAt)
@@ -157,8 +212,19 @@ public sealed class Company : AggregateRoot
         return Result.Success();
     }
 
-    public Result UpdateDetails(string legalName, string? tradeName, EmailAddress email, string timeZoneId)
+    public Result UpdateDetails(
+        string legalName,
+        string? tradeName,
+        EmailAddress email,
+        Address address,
+        string timeZoneId,
+        PhoneNumber? phone = null,
+        string? stateRegistration = null,
+        string? municipalRegistration = null,
+        DateOnly? foundedOn = null)
     {
+        ArgumentNullException.ThrowIfNull(address);
+
         var errors = new List<Error>();
 
         if (string.IsNullOrWhiteSpace(legalName))
@@ -179,6 +245,11 @@ public sealed class Company : AggregateRoot
         LegalName = legalName.Trim();
         TradeName = tradeName?.Trim();
         Email = email;
+        Address = address;
+        Phone = phone;
+        StateRegistration = NullIfBlank(stateRegistration);
+        MunicipalRegistration = NullIfBlank(municipalRegistration);
+        FoundedOn = foundedOn;
 
         // Changing the zone does not reinterpret past punches: each record
         // freezes the offset applied when it was taken.
@@ -186,6 +257,30 @@ public sealed class Company : AggregateRoot
 
         return Result.Success();
     }
+
+    /// <summary>
+    /// The company's UTC offset at a given instant.
+    /// </summary>
+    /// <remarks>
+    /// Resolved for that moment rather than for now, so a punch made before a
+    /// daylight-saving change keeps the offset that was in force when it
+    /// happened.
+    ///
+    /// Falls back to UTC instead of throwing when the identifier is unknown. A
+    /// misconfigured timezone must not stop anyone punching or reading a clock,
+    /// for the same reason nothing else here refuses a record.
+    /// </remarks>
+    public static TimeSpan OffsetAt(string timeZoneId, DateTimeOffset instant) =>
+        TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out var zone)
+            ? zone.GetUtcOffset(instant)
+            : TimeSpan.Zero;
+
+    /// <summary>The calendar day that instant falls on, in company time.</summary>
+    public static DateOnly LocalDateAt(string timeZoneId, DateTimeOffset instant) =>
+        DateOnly.FromDateTime((instant + OffsetAt(timeZoneId, instant)).DateTime);
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static bool IsKnownTimeZone(string timeZoneId) =>
         !string.IsNullOrWhiteSpace(timeZoneId) && TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out _);

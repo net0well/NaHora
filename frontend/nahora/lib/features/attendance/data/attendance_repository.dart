@@ -3,7 +3,9 @@ import 'package:dio/dio.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/network/api_exception_mapper.dart';
 import '../domain/captured_location.dart';
+import '../domain/punch_day.dart';
 import '../domain/punch_direction.dart';
+import '../domain/punch_history_page.dart';
 import '../domain/punch_receipt.dart';
 
 /// Talks to the attendance endpoints.
@@ -77,6 +79,48 @@ class AttendanceRepository {
         trust: body['trust'] as String,
         alreadyRegistered: (body['alreadyRegistered'] as bool?) ?? false,
       );
+    } on DioException catch (exception) {
+      throw ApiExceptionMapper.map(exception);
+    }
+  }
+
+  /// The employee's own punches for one working day.
+  ///
+  /// Sends no date by default. The day is resolved on the server in company
+  /// time, because a phone whose date is a day out would otherwise ask for a
+  /// day that never happened and be told, correctly, that it is empty.
+  Future<PunchDay> punchesForDay({String? localDate}) async {
+    try {
+      final response = await _client.get<Map<String, dynamic>>(
+        '/api/v1/punches/me',
+        queryParameters: localDate == null ? null : {'localDate': localDate},
+      );
+
+      final body = response.data;
+      if (body == null) {
+        throw const UnexpectedException();
+      }
+
+      return PunchDay.fromJson(body);
+    } on DioException catch (exception) {
+      throw ApiExceptionMapper.map(exception);
+    }
+  }
+
+  /// A page of the employee's own history, newest first.
+  Future<PunchHistoryPage> history({int page = 1, int pageSize = 30}) async {
+    try {
+      final response = await _client.get<Map<String, dynamic>>(
+        '/api/v1/punches/me/history',
+        queryParameters: {'page': page, 'pageSize': pageSize},
+      );
+
+      final body = response.data;
+      if (body == null) {
+        throw const UnexpectedException();
+      }
+
+      return PunchHistoryPage.fromJson(body);
     } on DioException catch (exception) {
       throw ApiExceptionMapper.map(exception);
     }

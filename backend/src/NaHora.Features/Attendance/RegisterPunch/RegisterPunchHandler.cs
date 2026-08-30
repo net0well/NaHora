@@ -162,16 +162,7 @@ public static class RegisterPunchHandler
 
         var today = await punches.GetByLocalDateAsync(companyId, employeeId, localDate, cancellationToken);
 
-        // Entry, break out, break in, exit — then round again for a split
-        // shift, which is common enough in Brazil to be the default rather
-        // than an edge case.
-        return (today.Count % 4) switch
-        {
-            0 => PunchDirection.Entry,
-            1 => PunchDirection.BreakStart,
-            2 => PunchDirection.BreakEnd,
-            _ => PunchDirection.Exit
-        };
+        return PunchDirectionSequence.NextAfter(today.Count);
     }
 
     /// <summary>

@@ -27,7 +27,16 @@ class AppLocationPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (tone, icon, message) = switch ((isUnavailable, isDegraded)) {
+    // A preview with no reading cannot claim a confirmed location, whatever
+    // the flags say. Without this the success branch renders "confirmada ·
+    // null m" for any state the caller forgot to map — which is both wrong and
+    // the opposite of what the screen says underneath it.
+    final hasFix = accuracyMeters != null;
+
+    final (tone, icon, message) = switch ((
+      isUnavailable || !hasFix,
+      isDegraded,
+    )) {
       (true, _) => (
         AppColors.textSecondary,
         Icons.location_disabled_outlined,
@@ -36,12 +45,12 @@ class AppLocationPreview extends StatelessWidget {
       (_, true) => (
         AppColors.warning,
         Icons.warning_amber_rounded,
-        'Precisão baixa · ${accuracyMeters?.round()} m',
+        'Precisão baixa · ${accuracyMeters!.round()} m',
       ),
       _ => (
         AppColors.success,
         Icons.check_circle_outline,
-        'Localização confirmada · ${accuracyMeters?.round()} m',
+        'Localização confirmada · ${accuracyMeters!.round()} m',
       ),
     };
 

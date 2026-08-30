@@ -40,6 +40,30 @@ internal sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(employee => employee.Position)
             .HasMaxLength(100);
 
+        builder.Property(employee => employee.Department)
+            .HasMaxLength(100);
+
+        // Text rather than an integer: a migration that reorders the enum would
+        // silently reassign every existing row.
+        builder.Property(employee => employee.ContractType)
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .IsRequired();
+
+        builder.Property(employee => employee.BirthDate);
+
+        builder.Property(employee => employee.Email)
+            .HasConversion<NullableEmailAddressConverter>()
+            .HasMaxLength(254);
+
+        builder.Property(employee => employee.Phone)
+            .HasConversion<NullablePhoneNumberConverter>()
+            .HasMaxLength(11);
+
+        // Optional, unlike the company's: a hire is never blocked for a missing
+        // address, the same way it is never blocked for a missing PIS.
+        builder.OwnsOne(employee => employee.Address, address => address.ConfigureAddress());
+
         builder.Property(employee => employee.HiredAt).IsRequired();
 
         builder.Property(employee => employee.Status)
