@@ -10,25 +10,53 @@ import '../../../design_system/components/app_detail_list.dart';
 import '../../../design_system/components/app_empty_state.dart';
 import '../../../design_system/components/app_error_state.dart';
 import '../../../design_system/components/app_loading.dart';
+import '../../../design_system/components/app_segmented_control.dart';
 import '../../../design_system/components/punch_entry_tile.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/theme/app_spacing.dart';
 import '../../../design_system/theme/app_typography.dart';
 import '../../attendance/domain/punch_day.dart';
 import '../../attendance/presentation/attendance_providers.dart';
+import '../../adjustments/presentation/adjustments_providers.dart';
+import '../../adjustments/presentation/manager_queue.dart';
 import '../../attendance/presentation/punch_entry_formatting.dart';
+import '../../auth/domain/permissions.dart';
 import '../../auth/presentation/auth_providers.dart';
 import '../../profile/domain/company_profile.dart';
 import '../../profile/domain/employee_profile.dart';
 import '../../profile/presentation/profile_providers.dart';
 
 /// Who the employee is, what they recorded today, and who they work for.
-class EmployeeTab extends ConsumerWidget {
+///
+/// A manager gets a second view of the same screen: the corrections their
+/// people are waiting on. It sits here rather than in a tab of its own because
+/// approving somebody's punch is part of managing them, and a fourth tab in the
+/// bar would cost every employee space for something only a manager can open.
+class EmployeeTab extends ConsumerStatefulWidget {
   const EmployeeTab({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EmployeeTab> createState() => _EmployeeTabState();
+}
+
+class _EmployeeTabState extends ConsumerState<EmployeeTab> {
+  static const String _profile = 'profile';
+  static const String _adjustments = 'adjustments';
+
+  String _segment = _profile;
+
+  @override
+  Widget build(BuildContext context) {
     final session = ref.watch(currentSessionProvider);
+    final canDecide = session?.user.can(Permissions.adjustAttendance) ?? false;
+
+    // Only a manager asks. For anybody else the endpoint would answer with
+    // their own requests, which this screen has nowhere to put.
+    final pending = canDecide
+        ? ref.watch(pendingAdjustmentsProvider).valueOrNull?.length
+        : null;
+
+    final showQueue = canDecide && _segment == _adjustments;
 
     return SafeArea(
       child: ListView(
@@ -51,11 +79,40 @@ class EmployeeTab extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const _TodaySection(),
-          const SizedBox(height: AppSpacing.lg),
-          const _EmployeeSection(),
-          const SizedBox(height: AppSpacing.lg),
-          const _CompanySection(),
+
+          if (canDecide) ...[
+            AppSegmentedControl(
+              key: const Key('employee_tab_segments'),
+              selectedId: _segment,
+              segments: [
+                const AppSegment(id: _profile, label: 'Meus dados'),
+                AppSegment(
+                  id: _adjustments,
+                  label: 'Ajustes',
+
+                  // Absent rather than zero: a badge reading 0 is a mark the
+                  // eye keeps checking for nothing.
+                  badge: pending == null || pending == 0 ? null : '$pending',
+                ),
+              ],
+              onChanged: (id) => setState(() => _segment = id),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+
+          if (showQueue)
+            const ManagerQueue()
+          else ...[
+            const _TodaySection(),
+            const SizedBox(height: AppSpacing.lg),
+            const _EmployeeSection(),
+            const SizedBox(height: AppSpacing.lg),
+            const _CompanySection(),
+          ],
+
+          // Outside the switch: signing out is not part of either view, and
+          // hiding it behind a segment would make it unreachable from the one
+          // a manager happens to be on.
           const SizedBox(height: AppSpacing.lg),
           const _SignOut(),
         ],
@@ -116,7 +173,7 @@ class _Today extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         for (final entry in day.entries) ...[
           PunchEntryTile(
-            key: Key('punch_entry_${entry.nsr}'),
+            key: Key('punch_entry_${entry.id}'),
             time: entry.timeLabel,
             direction: entry.note == null
                 ? entry.direction.label

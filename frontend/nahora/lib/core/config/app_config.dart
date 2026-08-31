@@ -31,6 +31,19 @@ abstract final class AppConfig {
     'DEFAULT_COMPANY_ID',
   );
 
+  /// The MapTiler key, for the tiles behind a punch's pin.
+  ///
+  /// Empty by default, and the app is fully usable without it: the map falls
+  /// back to the coordinate in text. Nothing on the client may stop a punch,
+  /// and a missing key is exactly the kind of thing that would.
+  ///
+  /// Never a literal in source. Restrict it by origin in the MapTiler console
+  /// before release — an unrestricted key is one that anybody who opens the APK
+  /// can spend your quota with.
+  static const String mapTilerKey = String.fromEnvironment('MAPTILER_KEY');
+
+  static bool get hasMap => mapTilerKey.isNotEmpty;
+
   static const bool isProduction = bool.fromEnvironment('PRODUCTION');
 
   static const Duration requestTimeout = Duration(seconds: 30);

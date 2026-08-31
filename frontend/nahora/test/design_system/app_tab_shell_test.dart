@@ -18,7 +18,7 @@ void main() {
             currentTab: AppTab.employee,
             onTabSelected: (_) {},
             onPrimaryAction: () {},
-            primaryIcon: Icons.schedule,
+            primaryTime: null,
             child: const SizedBox.shrink(),
           ),
         );
@@ -41,7 +41,7 @@ void main() {
             currentTab: AppTab.employee,
             onTabSelected: (tab) => selected = tab,
             onPrimaryAction: () {},
-            primaryIcon: Icons.schedule,
+            primaryTime: null,
             child: const SizedBox.shrink(),
           ),
         );
@@ -66,13 +66,13 @@ void main() {
           currentTab: AppTab.employee,
           onTabSelected: (_) {},
           onPrimaryAction: () => taps++,
-          primaryIcon: Icons.schedule,
+          primaryTime: null,
           child: const SizedBox.shrink(),
         ),
       );
 
       // Act
-      await tester.tap(find.byIcon(Icons.schedule));
+      await tester.tap(find.byKey(const Key('punch_action_clock')));
       await tester.pumpAndSettle();
 
       // Assert
@@ -91,7 +91,7 @@ void main() {
           currentTab: AppTab.history,
           onTabSelected: (_) {},
           onPrimaryAction: () {},
-          primaryIcon: Icons.schedule,
+          primaryTime: null,
           child: const SizedBox.shrink(),
         ),
       );
@@ -116,7 +116,7 @@ void main() {
             currentTab: AppTab.employee,
             onTabSelected: _ignore,
             onPrimaryAction: null,
-            primaryIcon: Icons.schedule,
+            primaryTime: null,
             child: SizedBox.shrink(),
           ),
         );

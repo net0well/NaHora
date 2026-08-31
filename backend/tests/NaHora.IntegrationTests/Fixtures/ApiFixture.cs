@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using NaHora.Api.Development;
 using NaHora.Domain.Companies;
+using NaHora.Domain.Notifications;
 using NaHora.Infrastructure.Persistence;
 using Testcontainers.PostgreSql;
 
@@ -68,6 +69,11 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
             // belong to nobody.
             services.RemoveAll<ICompanyRegistryLookup>();
             services.AddScoped<ICompanyRegistryLookup, StubCompanyRegistryLookup>();
+
+            // Keeps the suite off the network, and lets a test read the
+            // password a new employee was sent — the only place it exists.
+            services.RemoveAll<IEmailSender>();
+            services.AddScoped<IEmailSender, StubEmailSender>();
         });
     }
 

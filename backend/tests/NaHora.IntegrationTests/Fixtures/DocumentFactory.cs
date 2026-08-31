@@ -84,4 +84,41 @@ internal static class DocumentFactory
 
         return remainder < 2 ? 0 : 11 - remainder;
     }
+
+    /// <summary>
+    /// A PIS with a valid check digit.
+    /// </summary>
+    /// <remarks>
+    /// Generated rather than fixed, so tests sharing one database stay
+    /// independent of each other and of execution order.
+    /// </remarks>
+    public static string NewPis()
+    {
+        Span<int> weights = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        Span<char> digits = stackalloc char[11];
+
+        var sum = 0;
+        for (var index = 0; index < 10; index++)
+        {
+            var digit = Random.Shared.Next(0, 10);
+            digits[index] = (char)('0' + digit);
+            sum += digit * weights[index];
+        }
+
+        var remainder = sum % 11;
+        digits[10] = (char)('0' + (remainder < 2 ? 0 : 11 - remainder));
+
+        return new string(digits);
+    }
+
+    /// <summary>
+    /// A short value that is actually distinct between two calls.
+    /// </summary>
+    /// <remarks>
+    /// The tail, never the head. A version 7 GUID starts with a timestamp, so
+    /// the first eight hex digits of two created in the same millisecond are
+    /// identical — which turned "a unique registration" into a duplicate and a
+    /// 409 that surfaced far from its cause.
+    /// </remarks>
+    public static string NewShortSuffix() => Guid.CreateVersion7().ToString("N")[^8..];
 }

@@ -65,7 +65,8 @@ public sealed class Punch : AggregateRoot, ITenantOwned
         DateOnly localDate,
         TimeSpan companyOffset,
         GeoLocation location,
-        DeviceIntegrity integrity)
+        DeviceIntegrity integrity,
+        GeoLocation? previousLocation)
     {
         CompanyId = companyId;
         EmployeeId = employeeId;
@@ -79,7 +80,7 @@ public sealed class Punch : AggregateRoot, ITenantOwned
         CompanyOffset = companyOffset;
         Location = location;
         Integrity = integrity;
-        Trust = Classify(origin, location, integrity);
+        Trust = Classify(origin, location, integrity, previousLocation);
     }
 
     public Guid CompanyId { get; private set; }
@@ -151,7 +152,8 @@ public sealed class Punch : AggregateRoot, ITenantOwned
         DateTimeOffset recordedAt,
         TimeSpan companyOffset,
         GeoLocation? location,
-        DeviceIntegrity integrity)
+        DeviceIntegrity integrity,
+        GeoLocation? previousLocation = null)
     {
         ArgumentNullException.ThrowIfNull(integrity);
 
@@ -187,7 +189,8 @@ public sealed class Punch : AggregateRoot, ITenantOwned
             DateOnly.FromDateTime((occurredAt + companyOffset).DateTime),
             companyOffset,
             location!,
-            integrity);
+            integrity,
+            previousLocation);
 
         return Result.Success(punch);
     }
@@ -196,11 +199,24 @@ public sealed class Punch : AggregateRoot, ITenantOwned
     /// Decides how much the record can be relied on, from what the device
     /// reported.
     /// </summary>
-    private static PunchTrust Classify(PunchOrigin origin, GeoLocation location, DeviceIntegrity integrity)
+    private static PunchTrust Classify(
+        PunchOrigin origin,
+        GeoLocation location,
+        DeviceIntegrity integrity,
+        GeoLocation? previousLocation)
     {
         // A mocked position is a deliberate act, and a clock far out of step is
         // the other way to fake a punch. Both go to a human.
         if (integrity.LocationWasMocked || Math.Abs(integrity.ClockSkewSeconds) > SuspiciousClockSkewSeconds)
+        {
+            return PunchTrust.NeedsReview;
+        }
+
+        // A reading identical to the last one, down to the last digit. Real GPS
+        // never repeats itself exactly — it drifts by metres standing still —
+        // so this is a position being replayed rather than measured. It catches
+        // the fake-location app that the mock flag misses on a rooted device.
+        if (previousLocation is not null && location.IsSamePointAs(previousLocation))
         {
             return PunchTrust.NeedsReview;
         }

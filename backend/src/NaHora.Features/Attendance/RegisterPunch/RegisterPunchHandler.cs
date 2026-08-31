@@ -69,8 +69,19 @@ public static class RegisterPunchHandler
             return Result.Failure<RegisterPunchResponse>(locationResult.Errors);
         }
 
-        var direction = await ResolveNextDirectionAsync(
-            punches, companyId, employee.Id, occurredAt, company.TimeZoneId, cancellationToken);
+        // One read, two answers: which boundary comes next, and where the last
+        // mark was. Asking twice would be a second query for something already
+        // in hand.
+        var today = await punches.GetByLocalDateAsync(
+            companyId,
+            employee.Id,
+            LocalDateOf(occurredAt, company.TimeZoneId),
+            cancellationToken);
+
+        var direction = PunchDirectionSequence.NextAfter(today.Count);
+        var previousLocation = today.Count == 0
+            ? null
+            : today.MaxBy(punch => punch.OccurredAt)!.Location;
 
         // Taken last, and inside the same transaction as the insert: a number
         // handed out by a transaction that then fails would leave a gap the AFD
@@ -88,7 +99,8 @@ public static class RegisterPunchHandler
             recordedAt,
             ResolveOffset(company.TimeZoneId, occurredAt),
             locationResult.Value,
-            BuildIntegrity(command.Device, occurredAt));
+            BuildIntegrity(command.Device, occurredAt),
+            previousLocation);
 
         if (punchResult.IsFailure)
         {
@@ -150,20 +162,9 @@ public static class RegisterPunchHandler
     /// The server decides, not the app. Letting the client choose would allow
     /// two entries in a row, and the correction lands on a manager.
     /// </remarks>
-    private static async Task<PunchDirection> ResolveNextDirectionAsync(
-        IPunchRepository punches,
-        Guid companyId,
-        Guid employeeId,
-        DateTimeOffset occurredAt,
-        string timeZoneId,
-        CancellationToken cancellationToken)
-    {
-        var localDate = DateOnly.FromDateTime((occurredAt + ResolveOffset(timeZoneId, occurredAt)).DateTime);
-
-        var today = await punches.GetByLocalDateAsync(companyId, employeeId, localDate, cancellationToken);
-
-        return PunchDirectionSequence.NextAfter(today.Count);
-    }
+    /// <summary>The working day an instant falls on, in company time.</summary>
+    private static DateOnly LocalDateOf(DateTimeOffset occurredAt, string timeZoneId) =>
+        DateOnly.FromDateTime((occurredAt + ResolveOffset(timeZoneId, occurredAt)).DateTime);
 
     /// <summary>
     /// The company's UTC offset at that instant.

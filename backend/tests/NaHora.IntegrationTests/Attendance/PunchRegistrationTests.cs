@@ -225,11 +225,56 @@ public sealed class PunchRegistrationTests(ApiFixture fixture) : IClassFixture<A
         await delete.ShouldThrowAsync<Npgsql.PostgresException>();
     }
 
+    [Fact]
+    public async Task Punch_FromExactlyTheSamePointAsTheLastOne_IsRecordedAndFlagged()
+    {
+        // Arrange — a GPS standing still drifts by metres between readings and
+        // never repeats itself digit for digit. An exact repeat is a position
+        // being replayed, which is what a fake-location app does on a rooted
+        // device where the mock flag no longer shows.
+        var (_, token) = await SignedInEmployeeAsync();
+
+        await PostPunchAsync(token, NewPunchBody());
+
+        // Act
+        var response = await PostPunchAsync(token, NewPunchBody());
+        var body = await ReadJsonAsync(response);
+
+        // Assert — recorded, because Art. 78 §1º forbids the registrar from
+        // restricting the record. What changes is what it is worth.
+        response.StatusCode.ShouldBe(HttpStatusCode.Created);
+        body.GetProperty("nsr").GetInt64().ShouldBeGreaterThan(0);
+        body.GetProperty("trust").GetString().ShouldBe("NeedsReview");
+    }
+
+    [Fact]
+    public async Task Punch_FromAPointThatMovedAtAll_StaysTrusted()
+    {
+        // Arrange — the rule is "identical", not "nearby". Somebody punching in
+        // and out from the same desk must not be treated as a suspect.
+        var (_, token) = await SignedInEmployeeAsync();
+
+        await PostPunchAsync(token, NewPunchBody());
+
+        // Act — a metre or so away
+        var response = await PostPunchAsync(
+            token,
+            NewPunchBody(latitude: -23.55051));
+
+        // Assert
+        (await ReadJsonAsync(response))
+            .GetProperty("trust")
+            .GetString()
+            .ShouldBe("Trusted");
+    }
+
     private static object NewPunchBody(
         double accuracyMeters = 12,
         bool wasMocked = false,
         DateTimeOffset? deviceClockAt = null,
-        DateTimeOffset? offlineOccurredAt = null)
+        DateTimeOffset? offlineOccurredAt = null,
+        double latitude = -23.5505,
+        double longitude = -46.6333)
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -238,8 +283,8 @@ public sealed class PunchRegistrationTests(ApiFixture fixture) : IClassFixture<A
             clientId = Guid.CreateVersion7().ToString("n"),
             location = new
             {
-                latitude = -23.5505,
-                longitude = -46.6333,
+                latitude,
+                longitude,
                 accuracyMeters,
                 capturedAt = offlineOccurredAt ?? now
             },

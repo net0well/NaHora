@@ -36,6 +36,11 @@ internal static class DevelopmentSeedData
     public const string ManagerCpf = "11144477735";
     public const string ManagerName = "Marina Gestora";
     public const string ManagerEmail = "gestora@nahora.dev";
+    public const string ManagerPis = "23456789013";
+    public const string ManagerRegistration = "0002";
+    public const string ManagerPosition = "Coordenadora";
+    public const string ManagerDepartment = "Administração";
+    public const string ManagerPhone = "11977776666";
 
     public const string EmployeeCpf = "52998224725";
     public const string EmployeePis = "12345678900";

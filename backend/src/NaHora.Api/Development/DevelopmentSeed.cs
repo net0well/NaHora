@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using NaHora.Domain.Abstractions;
 using NaHora.Domain.Companies;
 using NaHora.Domain.Employees;
+using NaHora.Domain.Scheduling;
 using NaHora.Domain.Users;
 using NaHora.Domain.ValueObjects;
 using NaHora.Infrastructure.Persistence;
@@ -88,6 +89,8 @@ internal static class DevelopmentSeed
         dbContext.Users.Add(seeded.Manager);
         dbContext.Users.Add(seeded.EmployeeUser);
         dbContext.Employees.Add(seeded.Employee);
+        dbContext.Employees.Add(seeded.ManagerEmployee);
+        dbContext.CompanyWorkSchedules.Add(seeded.Schedule);
 
         await dbContext.SaveChangesAsync();
 
@@ -195,6 +198,38 @@ internal static class DevelopmentSeed
             return Result.Failure<SeededTenant>([.. managerResult.Errors, .. employeeUserResult.Errors]);
         }
 
+        var managerPis = Pis.Create(DevelopmentSeedData.ManagerPis);
+        var managerPhone = PhoneNumber.Create(DevelopmentSeedData.ManagerPhone);
+
+        if (managerPis.IsFailure || managerPhone.IsFailure)
+        {
+            return Result.Failure<SeededTenant>([.. managerPis.Errors, .. managerPhone.Errors]);
+        }
+
+        // The manager punches too. Recording attendance needs an employment
+        // record — it is what the AFD identifies — so a coordinator without one
+        // could sign in and then be refused at the only screen that matters.
+        var managerEmployeeResult = Employee.Hire(
+            company.Id,
+            managerResult.Value.Id,
+            managerCpf.Value,
+            managerPis.Value,
+            DevelopmentSeedData.ManagerName,
+            DevelopmentSeedData.ManagerRegistration,
+            DevelopmentSeedData.ManagerPosition,
+            DateOnly.FromDateTime(now.UtcDateTime),
+            now,
+            department: DevelopmentSeedData.ManagerDepartment,
+            birthDate: new DateOnly(1988, 11, 3),
+            email: managerEmail.Value,
+            phone: managerPhone.Value,
+            address: address.Value);
+
+        if (managerEmployeeResult.IsFailure)
+        {
+            return Result.Failure<SeededTenant>(managerEmployeeResult.Errors);
+        }
+
         var employeeResult = Employee.Hire(
             company.Id,
             employeeUserResult.Value.Id,
@@ -220,7 +255,9 @@ internal static class DevelopmentSeed
             company,
             managerResult.Value,
             employeeUserResult.Value,
-            employeeResult.Value));
+            employeeResult.Value,
+            managerEmployeeResult.Value,
+            CompanyWorkSchedule.Default(company.Id, now)));
     }
 
     /// <summary>
@@ -241,5 +278,7 @@ internal static class DevelopmentSeed
         Company Company,
         User Manager,
         User EmployeeUser,
-        Employee Employee);
+        Employee Employee,
+        Employee ManagerEmployee,
+        CompanyWorkSchedule Schedule);
 }
