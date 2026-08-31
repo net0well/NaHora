@@ -14,6 +14,7 @@ import '../../../design_system/theme/app_typography.dart';
 import '../../attendance/domain/punch_entry.dart';
 import '../../attendance/domain/punch_history_page.dart';
 import '../../attendance/presentation/attendance_providers.dart';
+import '../../attendance/presentation/day_locations_sheet.dart';
 import '../../attendance/presentation/punch_entry_formatting.dart';
 
 /// Every punch the employee has, one row per day.
@@ -168,10 +169,15 @@ class _DayActions extends StatelessWidget {
           variant: AppButtonVariant.secondary,
           expanded: true,
 
-          // Disabled rather than hidden while the map is unbuilt: a control
-          // that appears later moves everything under it, and somebody who
-          // learned where it was has to learn again.
-          onPressed: null,
+          // Opens on request, and only then does a coordinate reach the
+          // device. No listing carries one.
+          onPressed: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: AppColors.surface,
+            builder: (_) =>
+                DayLocationsSheet(dayLabel: _dayLabel(day), entries: entries),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         AppButton(

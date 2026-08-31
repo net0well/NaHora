@@ -5,6 +5,7 @@ import 'package:nahora/features/attendance/domain/punch_day.dart';
 import 'package:nahora/features/attendance/domain/punch_direction.dart';
 import 'package:nahora/features/attendance/domain/punch_entry.dart';
 import 'package:nahora/features/attendance/domain/punch_entry_source.dart';
+import 'package:nahora/features/attendance/domain/punch_location.dart';
 import 'package:nahora/features/attendance/domain/punch_history_page.dart';
 import 'package:nahora/features/attendance/domain/punch_receipt.dart';
 import 'package:nahora/features/attendance/domain/punch_trust.dart';
@@ -142,6 +143,30 @@ class FakeAttendanceRepository implements AttendanceRepository {
     hasMore: false,
     entries: [],
   );
+
+  /// Where each mark was made, by punch id. Absent means the server answers
+  /// 404, which is what a colleague's mark looks like from here.
+  final Map<String, PunchLocation> locations = {};
+
+  /// Every position asked for, in order. Enough to prove the sheet fetches the
+  /// mark somebody picked rather than re-rendering the one it had.
+  final List<String> requestedLocations = [];
+
+  @override
+  Future<PunchLocation> punchLocation(String punchId) async {
+    requestedLocations.add(punchId);
+
+    if (failure != null) {
+      throw failure!;
+    }
+
+    final location = locations[punchId];
+    if (location == null) {
+      throw const BusinessException('PUNCH_NOT_FOUND');
+    }
+
+    return location;
+  }
 
   /// One recorded punch, with the pieces a screen actually renders.
   static PunchEntry entry({
