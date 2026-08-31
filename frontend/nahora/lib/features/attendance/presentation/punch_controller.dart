@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../domain/captured_location.dart';
+import '../domain/pending_punch.dart';
 import '../domain/location_provider.dart';
 import 'attendance_providers.dart';
 import 'punch_state.dart';
@@ -15,6 +16,10 @@ class PunchController extends AutoDisposeNotifier<PunchState> {
   @override
   PunchState build() {
     Future.microtask(prepare);
+
+    // Opening the screen is the most likely moment for signal to be back: the
+    // person walked out of the basement and reached for the app.
+    Future.microtask(() => ref.read(punchSyncProvider).drain());
 
     return const PunchLocating();
   }
@@ -93,20 +98,74 @@ class PunchController extends AutoDisposeNotifier<PunchState> {
       return;
     }
 
+    final clientId = ref.read(clientIdFactoryProvider)();
+    final deviceId = await ref.read(deviceIdProvider.future);
+    final deviceClockAt = DateTime.now();
+
     try {
       final receipt = await ref
           .read(attendanceRepositoryProvider)
           .registerPunch(
-            clientId: ref.read(clientIdFactoryProvider)(),
+            clientId: clientId,
             location: location,
-            deviceId: await ref.read(deviceIdProvider.future),
-            deviceClockAt: DateTime.now(),
+            deviceId: deviceId,
+            deviceClockAt: deviceClockAt,
           );
 
       state = PunchConfirmed(receipt);
+
+      // Signal is back, so anything the queue is still holding goes now.
+      await ref.read(punchSyncProvider).drain();
+    } on NetworkException {
+      state = PunchQueued(
+        await _hold(
+          clientId: clientId,
+          location: location,
+          deviceId: deviceId,
+          deviceClockAt: deviceClockAt,
+        ),
+      );
     } on AppException catch (exception) {
       state = PunchFailed(ErrorMessages.resolve(exception.code));
     }
+  }
+
+  /// Keeps the punch on the device until there is signal.
+  ///
+  /// Returns how many are now waiting. The mark exists from this moment: a
+  /// client that answered "no network, try later" would be refusing a
+  /// registration, which Art. 78 §1º does not allow it to do.
+  Future<int> _hold({
+    required String clientId,
+    required CapturedLocation location,
+    required String deviceId,
+    required DateTime deviceClockAt,
+  }) async {
+    final clock = ref.read(serverClockProvider);
+    final queue = ref.read(punchQueueProvider);
+
+    // The anchor is what makes the estimate auditable. Without one — the app
+    // never reached the server this session — the device clock is all there is,
+    // and sending it with the anchor equal to it is what says so plainly.
+    final official = clock.nowUtc() ?? deviceClockAt.toUtc();
+
+    await queue.add(
+      PendingPunch(
+        clientId: clientId,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        accuracyMeters: location.accuracyMeters,
+        capturedAt: location.capturedAt,
+        isMocked: location.isMocked,
+        deviceId: deviceId,
+        deviceClockAt: deviceClockAt.toUtc(),
+        occurredAtEstimate: official,
+        monotonicElapsedMs: clock.monotonicElapsedMs,
+        anchorAt: clock.anchorAt ?? official,
+      ),
+    );
+
+    return (await queue.pending()).length;
   }
 
   /// Returns to a state where the employee can punch again.

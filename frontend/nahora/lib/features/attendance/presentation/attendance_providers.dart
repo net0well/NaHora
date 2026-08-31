@@ -5,9 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/network_providers.dart';
 import '../data/attendance_repository.dart';
 import '../data/geolocator_location_provider.dart';
+import '../data/punch_sync.dart';
+import '../data/secure_storage_punch_queue.dart';
 import '../data/server_clock.dart';
 import '../domain/location_provider.dart';
+import '../domain/pending_punch.dart';
 import '../domain/punch_day.dart';
+import '../domain/punch_queue.dart';
 import '../domain/punch_history_page.dart';
 import '../domain/punch_location.dart';
 import '../domain/work_day.dart';
@@ -88,3 +92,24 @@ final punchLocationProvider = FutureProvider.autoDispose
       (ref, punchId) =>
           ref.watch(attendanceRepositoryProvider).punchLocation(punchId),
     );
+
+/// Punches held on the device until there is signal.
+///
+/// In the platform's encrypted store, not SharedPreferences: a queued punch
+/// carries a coordinate, and a coordinate beside an employee says where that
+/// person was at that minute (OWASP Mobile M9).
+final punchQueueProvider = Provider<PunchQueue>(
+  (ref) => SecureStoragePunchQueue(),
+);
+
+final punchSyncProvider = Provider<PunchSync>(
+  (ref) => PunchSync(
+    queue: ref.watch(punchQueueProvider),
+    repository: ref.watch(attendanceRepositoryProvider),
+  ),
+);
+
+/// What is still waiting to go up.
+final pendingPunchesProvider = FutureProvider.autoDispose<List<PendingPunch>>(
+  (ref) => ref.watch(punchQueueProvider).pending(),
+);

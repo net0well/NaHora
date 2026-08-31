@@ -84,3 +84,18 @@ class PunchFailed extends PunchState {
   @override
   bool get canPunch => true;
 }
+
+/// Recorded on the device because there was no signal.
+///
+/// Not a failure. The mark exists, it keeps the time it was made at, and it
+/// goes up on its own when the network comes back — which is the whole point of
+/// a client that may never refuse a registration.
+class PunchQueued extends PunchState {
+  const PunchQueued(this.pendingCount);
+
+  /// How many are waiting, this one included.
+  final int pendingCount;
+
+  @override
+  bool get canPunch => true;
+}

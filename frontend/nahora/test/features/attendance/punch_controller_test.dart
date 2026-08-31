@@ -8,6 +8,7 @@ import 'package:nahora/features/attendance/presentation/punch_state.dart';
 
 import '../../support/fake_attendance_repository.dart';
 import '../../support/fake_location_provider.dart';
+import '../../support/fake_punch_queue.dart';
 
 /// The state machine behind the punch button.
 ///
@@ -18,10 +19,12 @@ void main() {
   group('PunchController', () {
     late FakeLocationProvider location;
     late FakeAttendanceRepository repository;
+    late FakePunchQueue queue;
 
     setUp(() {
       location = FakeLocationProvider();
       repository = FakeAttendanceRepository();
+      queue = FakePunchQueue();
     });
 
     ProviderContainer buildContainer() {
@@ -31,6 +34,7 @@ void main() {
           attendanceRepositoryProvider.overrideWithValue(repository),
           deviceIdProvider.overrideWith((ref) async => 'test-device'),
           clientIdFactoryProvider.overrideWithValue(() => 'client-fixed'),
+          punchQueueProvider.overrideWithValue(queue),
         ],
       );
       addTearDown(container.dispose);
@@ -187,6 +191,70 @@ void main() {
       expect(container.read(punchControllerProvider), isA<PunchConfirmed>());
     });
 
+    test('Given no network, When punched, '
+        'Then the mark is kept on the device rather than refused', () async {
+      // Arrange — a client that answered "try later" would be refusing a
+      // registration, which Art. 78 §1º does not allow it to do
+      location.position = _locationWith(accuracyMeters: 10);
+      final container = buildContainer();
+      await settled(container);
+
+      repository.failure = const NetworkException();
+
+      // Act
+      await container.read(punchControllerProvider.notifier).punch();
+
+      // Assert
+      final state = container.read(punchControllerProvider);
+      expect(state, isA<PunchQueued>());
+      expect((state as PunchQueued).pendingCount, 1);
+      expect(queue.held.single.clientId, 'client-fixed');
+      expect(queue.held.single.latitude, -23.5505);
+    });
+
+    test('Given a queued punch, When the next one succeeds, '
+        'Then the held one goes up with the time it was made at', () async {
+      // Arrange — stamping arrival time would record a punch made at 07:00 as
+      // whenever signal came back
+      location.position = _locationWith(accuracyMeters: 10);
+      final container = buildContainer();
+      await settled(container);
+
+      repository.failure = const NetworkException();
+      await container.read(punchControllerProvider.notifier).punch();
+
+      final made = queue.held.single.occurredAtEstimate;
+      repository.failure = null;
+
+      // Act
+      await container.read(punchControllerProvider.notifier).punch();
+
+      // Assert — the live punch, then the one that was waiting
+      expect(queue.held, isEmpty);
+      expect(repository.sentOffline.length, 2);
+      expect(repository.sentOffline.first, isNull);
+      expect(repository.sentOffline.last?.occurredAt, made);
+    });
+
+    test('Given a punch refused on its merits, When drained, '
+        'Then it is dropped instead of blocking the queue', () async {
+      // Arrange — kept, it would fail on every drain from now on and hold every
+      // later mark behind it
+      location.position = _locationWith(accuracyMeters: 10);
+      final container = buildContainer();
+      await settled(container);
+
+      repository.failure = const NetworkException();
+      await container.read(punchControllerProvider.notifier).punch();
+
+      repository.failure = const BusinessException('PUNCH_ALREADY_REGISTERED');
+
+      // Act
+      await container.read(punchSyncProvider).drain();
+
+      // Assert
+      expect(queue.held, isEmpty);
+    });
     test(
       'Given a punch, When sent, Then no time is sent as the official one',
       () async {

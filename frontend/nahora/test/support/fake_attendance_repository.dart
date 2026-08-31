@@ -43,6 +43,10 @@ class FakeAttendanceRepository implements AttendanceRepository {
   /// Thrown by [punchesForDay] and [history] when set.
   AppException? readFailure;
 
+  /// The offline block sent with each punch, null for one made online. Enough
+  /// to prove a drained punch keeps the time it was made at.
+  final List<OfflineEstimate?> sentOffline = [];
+
   @override
   Future<ServerTime> serverTime() async =>
       ServerTime(utc: serverStamp, utcOffset: companyOffset);
@@ -53,6 +57,7 @@ class FakeAttendanceRepository implements AttendanceRepository {
     required CapturedLocation location,
     required String deviceId,
     required DateTime deviceClockAt,
+    OfflineEstimate? offline,
   }) async {
     if (failure != null) {
       throw failure!;
@@ -60,6 +65,7 @@ class FakeAttendanceRepository implements AttendanceRepository {
 
     sentLocations.add(location);
     sentDeviceClocks.add(deviceClockAt);
+    sentOffline.add(offline);
 
     return PunchReceipt(
       id: 'punch-1',

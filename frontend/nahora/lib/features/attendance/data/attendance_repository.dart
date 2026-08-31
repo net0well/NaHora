@@ -48,6 +48,7 @@ class AttendanceRepository {
     required CapturedLocation location,
     required String deviceId,
     required DateTime deviceClockAt,
+    OfflineEstimate? offline,
   }) async {
     try {
       final response = await _client.post<Map<String, dynamic>>(
@@ -65,6 +66,14 @@ class AttendanceRepository {
             'locationWasMocked': location.isMocked,
             'deviceClockAt': deviceClockAt.toUtc().toIso8601String(),
           },
+          if (offline != null)
+            'offline': {
+              'occurredAtEstimate': offline.occurredAt
+                  .toUtc()
+                  .toIso8601String(),
+              'monotonicSinceBootMs': offline.monotonicElapsedMs,
+              'anchorAt': offline.anchorAt.toUtc().toIso8601String(),
+            },
         },
       );
 
@@ -183,4 +192,25 @@ class ServerTime {
   /// device: a phone with an outdated timezone database would compute a
   /// different one after a daylight-saving change.
   final Duration utcOffset;
+}
+
+/// The time a queued punch claims, and how the app arrived at it.
+///
+/// Sent only for a punch that waited on the device. Online the server stamps
+/// the time and the client has no say.
+class OfflineEstimate {
+  const OfflineEstimate({
+    required this.occurredAt,
+    required this.monotonicElapsedMs,
+    required this.anchorAt,
+  });
+
+  final DateTime occurredAt;
+
+  /// The monotonic reading when the punch was made, so the estimate can be
+  /// audited rather than merely believed.
+  final int monotonicElapsedMs;
+
+  /// The server instant the estimate counts from.
+  final DateTime anchorAt;
 }

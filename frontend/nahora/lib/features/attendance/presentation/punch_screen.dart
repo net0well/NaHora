@@ -245,6 +245,16 @@ class _StateMessage extends StatelessWidget {
       PunchSubmitting() => (AppColors.textSecondary, 'Registrando...'),
       PunchFailed(:final message) => (AppColors.danger, message),
       PunchConfirmed() => (AppColors.success, 'Ponto registrado'),
+
+      // Deliberately not red. The mark exists, it keeps the time it was made
+      // at, and it goes up on its own — treating that as a failure would tell
+      // somebody to punch again and give them two marks.
+      PunchQueued(:final pendingCount) => (
+        AppColors.warning,
+        pendingCount == 1
+            ? 'Sem conexão. Ponto guardado e será enviado sozinho.'
+            : 'Sem conexão. $pendingCount pontos guardados para enviar.',
+      ),
     };
 
     return Semantics(
