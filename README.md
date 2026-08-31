@@ -198,11 +198,57 @@ cd backend && dotnet run --project src/NaHora.Api
 ### 3. Frontend
 
 ```bash
-cd frontend/nahora && flutter run -d android
+cd frontend/nahora && flutter run -d android --dart-define=MAPTILER_KEY=sua-chave
 ```
 
 Com um aparelho conectado por USB (depuração USB ligada) ou um emulador aberto.
 `flutter devices` lista o que está disponível.
+
+A chave do MapTiler entra por `--dart-define` e **não é versionada**. Sem ela o
+app roda: o mapa cai para um cartão que mostra coordenada e precisão em texto,
+porque nada no cliente pode impedir uma marcação.
+
+---
+
+## Mapa e localização
+
+O mapa é do **MapTiler**. Não Google Maps, e não os tiles públicos do
+OpenStreetMap — a política de uso deles proíbe uso comercial e o acesso pode ser
+cortado sem aviso.
+
+A tela de marcação lê a localização duas vezes, e a segunda leitura é o ponto
+inteiro:
+
+```
+abre a tela
+   ↓ lê a localização
+mostra o mapa com o marcador
+   ↓ a pessoa confirma
+lê a localização de novo
+   ↓ valida a precisão
+grava a batida
+```
+
+A coordenada exibida pode ter minutos de idade quando o dedo encosta no botão. O
+que vale é onde a pessoa estava ao marcar, e é a coordenada relida que viaja
+para o servidor.
+
+Latitude e longitude ficam gravadas, mas **nenhuma listagem as devolve**. Só a
+consulta de uma marcação específica responde com coordenada, e só quando a
+pessoa pede para ver no mapa — devolvê-las em toda listagem colocaria um mapa de
+onde a pessoa esteve no aparelho mais fácil de perder.
+
+### Como obter a chave
+
+1. Criar conta em <https://cloud.maptiler.com/> (o plano gratuito serve para
+   desenvolvimento).
+2. Em **Account → API keys**, copiar a chave criada por padrão ou criar uma nova.
+3. Restringir a chave por origem antes de usá-la em produção: em **Allowed
+   origins**, listar apenas os domínios e o pacote Android do app. Uma chave sem
+   restrição é uma chave que qualquer pessoa que abra o APK pode usar por conta
+   da sua cota.
+4. Passar por `--dart-define=MAPTILER_KEY=...` no `flutter run` e no
+   `flutter build`. Nunca em arquivo versionado.
 
 ---
 
