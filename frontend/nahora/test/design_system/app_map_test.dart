@@ -172,6 +172,21 @@ void main() {
       expect(find.byKey(const Key('app_map_recentre')), findsNothing);
     });
 
+    testWidgets('Given the first fix arrives, When it replaces the fallback, '
+        'Then the map opens on it without being driven', (tester) async {
+      // Arrange — the punch screen starts with no fix and shows the card. The
+      // controller cannot be used before a map has rendered, and reaching for
+      // it here threw where the whole screen could see it.
+      await pump(tester, latitude: null, longitude: null, isInteractive: true);
+
+      // Act
+      await pump(tester, isInteractive: true);
+
+      // Assert
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const Key('app_map_marker')), findsOneWidget);
+    });
+
     testWidgets('Given a screen reader, When it reaches the map, '
         'Then the precision is spoken', (tester) async {
       // Arrange — a map says nothing to somebody who cannot see it, but the

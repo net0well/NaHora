@@ -73,14 +73,26 @@ class _AppMapState extends State<AppMap> {
       ? null
       : LatLng(widget.latitude!, widget.longitude!);
 
-  bool get _canDrawMap =>
-      widget.tileKey.isNotEmpty && _point != null && !widget.isUnavailable;
+  bool get _canDrawMap => _canDraw(widget);
+
+  static bool _canDraw(AppMap widget) =>
+      widget.tileKey.isNotEmpty &&
+      widget.latitude != null &&
+      widget.longitude != null &&
+      !widget.isUnavailable;
 
   @override
   void didUpdateWidget(AppMap oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     final point = _point;
+
+    // Only when a map was already on screen. Coming from the fallback there is
+    // no map yet, and the controller throws if it is driven before one has
+    // rendered — the fresh map opens on the new point anyway.
+    if (!_canDraw(oldWidget)) {
+      return;
+    }
 
     // A newer fix recentres the map — unless the person moved it themselves.
     // Yanking the view back under their thumb is the thing the recentre button
