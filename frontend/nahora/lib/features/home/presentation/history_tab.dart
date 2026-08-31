@@ -175,6 +175,10 @@ class _DayActions extends StatelessWidget {
           onPressed: () => showModalBottomSheet<void>(
             context: context,
             isScrollControlled: true,
+
+            // Kept below the status bar. A full-height sheet without this
+            // draws its title under the clock and the battery icon.
+            useSafeArea: true,
             backgroundColor: AppColors.surface,
             builder: (_) =>
                 DayLocationsSheet(dayLabel: _dayLabel(day), entries: entries),
@@ -189,6 +193,10 @@ class _DayActions extends StatelessWidget {
           onPressed: () => showModalBottomSheet<void>(
             context: context,
             isScrollControlled: true,
+
+            // Kept below the status bar. A full-height sheet without this
+            // draws its title under the clock and the battery icon.
+            useSafeArea: true,
             backgroundColor: AppColors.surface,
             builder: (_) => RequestAdjustmentSheet(
               dayLabel: _dayLabel(day),
