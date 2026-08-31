@@ -320,15 +320,40 @@ uma senha, **não pode ser trocado depois de vazar**.
 - [x] Observabilidade, outbox, rate limiting e resiliência
 - [x] Tempo real por SSE
 - [x] Design System e regras de token
-- [ ] Marcação por geolocalização — captura, hora do servidor, GPS falso
-- [ ] Modo offline — fila local e sincronização
-- [ ] Histórico e mapa da marcação
-- [ ] Ajuste de ponto pelo gestor — tratamento, justificativas, anexo
+- [x] Marcação por geolocalização — captura, hora do servidor, GPS falso
+- [x] Modo offline — fila local e sincronização
+- [x] Histórico e mapa da marcação
+- [x] Ajuste de ponto pelo gestor — tratamento, justificativas, anexo
+- [ ] Cerca da empresa — raio em que a marcação é aceita
+- [ ] Comprovante do ajuste visível para o gestor ao decidir
 - [ ] Jornada de trabalho e cálculo de horas
 - [ ] Eventos de segurança e revisão
 - [ ] Auditoria automática
 - [ ] Exportação CSV e Excel
 - [ ] AFD, AEJ e comprovante
+
+### Cerca da empresa
+
+A empresa define onde fica e com que raio. Uma marcação feita fora dele é
+**registrada assim mesmo** e sai sinalizada — a Portaria 671 veda ao REP
+mecanismos que restrinjam a marcação, e "longe demais" não é exceção. O que o
+raio compra é a diferença entre um ponto batido na portaria e um batido em
+casa, visível para quem aprova.
+
+O raio é da empresa, não do produto: uma obra e um escritório não têm o mesmo
+tamanho, e um número fixo estaria errado para os dois.
+
+### Comprovante visível na decisão
+
+Hoje a fila do gestor diz que existe um anexo, e não o mostra. Quem decide sobre
+um atestado precisa ver o atestado, senão está aprovando pelo nome de quem
+pediu.
+
+A imagem vem por link assinado de curta duração, pela rota que já existe — a
+listagem continua sem devolver onde o arquivo está, para que uma fila não vire
+um jeito de paginar os atestados de alguém.
+
+---
 
 ## Licença
 
