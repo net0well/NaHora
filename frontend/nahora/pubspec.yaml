@@ -48,6 +48,9 @@ dependencies:
   flutter_map: 8.3.2
   # Tipos de coordenada exigidos pelo flutter_map. Apache-2.0.
   latlong2: ^0.10.1
+  # Câmera e galeria para o comprovante do ajuste. BSD-3-Clause, do time do
+  # Flutter, verificada em pub.dev antes de entrar aqui.
+  image_picker: ^1.2.3
 
 dev_dependencies:
   flutter_test:

@@ -21,6 +21,8 @@ class AppTextField extends StatelessWidget {
     this.inputFormatters,
     this.onSubmitted,
     this.focusNode,
+    this.maxLines = 1,
+    this.onChanged,
   });
 
   final String label;
@@ -34,6 +36,14 @@ class AppTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onSubmitted;
   final FocusNode? focusNode;
+
+  /// How tall the field grows. More than one for anything somebody writes a
+  /// sentence into — a single line hides what they already typed.
+  final int maxLines;
+
+  /// Called on every keystroke, for a form whose submit button depends on what
+  /// is in the field.
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +62,8 @@ class AppTextField extends StatelessWidget {
       inputFormatters: inputFormatters,
       onSubmitted: onSubmitted,
       focusNode: focusNode,
+      maxLines: maxLines,
+      onChanged: onChanged,
     );
   }
 }
