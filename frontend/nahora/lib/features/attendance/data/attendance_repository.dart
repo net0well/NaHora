@@ -6,6 +6,7 @@ import '../domain/captured_location.dart';
 import '../domain/punch_day.dart';
 import '../domain/punch_direction.dart';
 import '../domain/punch_history_page.dart';
+import '../domain/punch_location.dart';
 import '../domain/punch_receipt.dart';
 import '../domain/work_day.dart';
 
@@ -125,6 +126,28 @@ class AttendanceRepository {
       }
 
       return WorkSchedule.fromJson(body);
+    } on DioException catch (exception) {
+      throw ApiExceptionMapper.map(exception);
+    }
+  }
+
+  /// Where one mark was made.
+  ///
+  /// One at a time, because that is what the server answers. The listings carry
+  /// no coordinates on purpose, so this is the only way the app ever learns a
+  /// position it did not itself just capture.
+  Future<PunchLocation> punchLocation(String punchId) async {
+    try {
+      final response = await _client.get<Map<String, dynamic>>(
+        '/api/v1/punches/$punchId/location',
+      );
+
+      final body = response.data;
+      if (body == null) {
+        throw const UnexpectedException();
+      }
+
+      return PunchLocation.fromJson(body);
     } on DioException catch (exception) {
       throw ApiExceptionMapper.map(exception);
     }

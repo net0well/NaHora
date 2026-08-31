@@ -9,6 +9,7 @@ import '../data/server_clock.dart';
 import '../domain/location_provider.dart';
 import '../domain/punch_day.dart';
 import '../domain/punch_history_page.dart';
+import '../domain/punch_location.dart';
 import '../domain/work_day.dart';
 import 'punch_controller.dart';
 import 'punch_state.dart';
@@ -76,3 +77,14 @@ final punchHistoryProvider = FutureProvider.autoDispose<PunchHistoryPage>(
 final workScheduleProvider = FutureProvider<WorkSchedule>(
   (ref) => ref.watch(attendanceRepositoryProvider).workSchedule(),
 );
+
+/// Where one mark was made.
+///
+/// Family rather than a single provider: a day has several marks, and asking
+/// for one must not evict the answer for another. Auto-disposed so a closed
+/// sheet stops holding coordinates in memory.
+final punchLocationProvider = FutureProvider.autoDispose
+    .family<PunchLocation, String>(
+      (ref, punchId) =>
+          ref.watch(attendanceRepositoryProvider).punchLocation(punchId),
+    );
