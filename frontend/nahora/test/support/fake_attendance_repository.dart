@@ -4,6 +4,7 @@ import 'package:nahora/features/attendance/domain/captured_location.dart';
 import 'package:nahora/features/attendance/domain/punch_day.dart';
 import 'package:nahora/features/attendance/domain/punch_direction.dart';
 import 'package:nahora/features/attendance/domain/punch_entry.dart';
+import 'package:nahora/features/attendance/domain/punch_entry_source.dart';
 import 'package:nahora/features/attendance/domain/punch_history_page.dart';
 import 'package:nahora/features/attendance/domain/punch_receipt.dart';
 import 'package:nahora/features/attendance/domain/punch_trust.dart';
@@ -154,11 +155,50 @@ class FakeAttendanceRepository implements AttendanceRepository {
     id: 'punch-$nsr',
     nsr: nsr,
     direction: direction,
+    source: PunchEntrySource.recorded,
     trust: trust,
     occurredAt: occurredAt ?? DateTime.utc(2026, 8, 30, 11, 5),
     companyOffset: companyOffset,
     accuracyMeters: 12,
     isOffline: isOffline,
+    localDate: localDate,
+  );
+
+  /// A punch whose time an approved adjustment replaced.
+  static PunchEntry adjusted({
+    int nsr = 1,
+    DateTime? occurredAt,
+    DateTime? originalOccurredAt,
+    String localDate = '2026-08-30',
+  }) => PunchEntry(
+    id: 'punch-$nsr',
+    nsr: nsr,
+    direction: PunchDirection.entry,
+    source: PunchEntrySource.adjusted,
+    trust: PunchTrust.trusted,
+    occurredAt: occurredAt ?? DateTime.utc(2026, 8, 30, 11, 5),
+    originalOccurredAt: originalOccurredAt ?? DateTime.utc(2026, 8, 30, 11, 32),
+    companyOffset: companyOffset,
+    accuracyMeters: 12,
+    isOffline: false,
+    localDate: localDate,
+  );
+
+  /// A mark that was never captured and counts because it was approved.
+  ///
+  /// No NSR, no trust and no accuracy: nothing was measured, and filling those
+  /// in would present a manager's decision as a reading.
+  static PunchEntry included({
+    String id = 'adjustment-1',
+    DateTime? occurredAt,
+    String localDate = '2026-08-30',
+  }) => PunchEntry(
+    id: id,
+    direction: PunchDirection.entry,
+    source: PunchEntrySource.included,
+    occurredAt: occurredAt ?? DateTime.utc(2026, 8, 30, 11, 5),
+    companyOffset: companyOffset,
+    isOffline: false,
     localDate: localDate,
   );
 }

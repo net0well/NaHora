@@ -96,8 +96,8 @@ void main() {
       await pump(tester);
 
       // Assert
-      expect(find.byKey(const Key('history_entry_2')), findsOneWidget);
-      expect(find.byKey(const Key('history_entry_1')), findsNothing);
+      expect(find.byKey(const Key('history_entry_punch-2')), findsOneWidget);
+      expect(find.byKey(const Key('history_entry_punch-1')), findsNothing);
     });
 
     testWidgets('Given a closed day, When its row is tapped, '
@@ -127,7 +127,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      expect(find.byKey(const Key('history_entry_1')), findsOneWidget);
+      expect(find.byKey(const Key('history_entry_punch-1')), findsOneWidget);
     });
 
     testWidgets('Given a day, When opened, '

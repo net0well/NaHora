@@ -70,7 +70,7 @@ void main() {
         await pump(tester);
 
         // Assert
-        expect(find.byKey(const Key('punch_entry_1')), findsOneWidget);
+        expect(find.byKey(const Key('punch_entry_punch-1')), findsOneWidget);
         expect(find.text('08:05'), findsOneWidget);
         expect(find.text('Próxima: Início do intervalo'), findsOneWidget);
       },
@@ -187,6 +187,47 @@ void main() {
         expect(find.text('PIS pendente'), findsOneWidget);
       },
     );
+
+    testWidgets('Given an approved inclusion, When shown, '
+        'Then it counts and says it was granted rather than measured', (
+      tester,
+    ) async {
+      // Arrange — the punch was never captured; it is on the day because a
+      // manager agreed, and a row that looked like a reading would hide that
+      attendance.day = PunchDay(
+        localDate: '2026-08-30',
+        timeZoneId: 'America/Sao_Paulo',
+        nextDirection: PunchDirection.breakStart,
+        entries: [FakeAttendanceRepository.included()],
+      );
+
+      // Act
+      await pump(tester);
+
+      // Assert
+      expect(find.byKey(const Key('punch_entry_adjustment-1')), findsOneWidget);
+      expect(find.text('08:05'), findsOneWidget);
+      expect(find.textContaining('Incluída por ajuste'), findsOneWidget);
+    });
+
+    testWidgets('Given an approved correction, When shown, '
+        'Then the time it replaced stays visible', (tester) async {
+      // Arrange — spec 014: a correction that hides what it replaced is an
+      // edit, and the employee has the right to see their record was changed
+      attendance.day = PunchDay(
+        localDate: '2026-08-30',
+        timeZoneId: 'America/Sao_Paulo',
+        nextDirection: PunchDirection.breakStart,
+        entries: [FakeAttendanceRepository.adjusted()],
+      );
+
+      // Act
+      await pump(tester);
+
+      // Assert
+      expect(find.text('08:05'), findsOneWidget);
+      expect(find.textContaining('Ajustada de 08:32'), findsOneWidget);
+    });
 
     testWidgets(
       'Given the screen, When rendered, Then there is a way out of the app',
