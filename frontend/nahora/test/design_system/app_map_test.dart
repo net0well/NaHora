@@ -21,6 +21,7 @@ void main() {
       double? accuracyMeters = 12,
       bool isUnavailable = false,
       bool isDegraded = false,
+      bool isInteractive = false,
     }) => pumpComponent(
       tester,
       AppMap(
@@ -31,6 +32,7 @@ void main() {
         accuracyMeters: accuracyMeters,
         isUnavailable: isUnavailable,
         isDegraded: isDegraded,
+        isInteractive: isInteractive,
       ),
     );
 
@@ -103,6 +105,72 @@ void main() {
         expect(circle.useRadiusInMeter, isTrue);
       },
     );
+
+    testWidgets('Given a map at rest, When shown, '
+        'Then no way back is offered yet', (tester) async {
+      // Arrange & Act — a control that is always there is one more thing to
+      // read on a screen whose job is a single decision
+      await pump(tester, isInteractive: true);
+
+      // Assert
+      expect(find.byKey(const Key('app_map_recentre')), findsNothing);
+    });
+
+    testWidgets('Given the map is dragged away, When it settles, '
+        'Then the way back appears and the mark has not moved', (tester) async {
+      // Arrange
+      await pump(tester, isInteractive: true);
+      final marker = tester.getCenter(find.byKey(const Key('app_map_marker')));
+
+      // Act
+      await tester.drag(
+        find.byKey(const Key('app_map')),
+        const Offset(-260, 0),
+      );
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(find.byKey(const Key('app_map_recentre')), findsOneWidget);
+
+      // The pin travelled with the map rather than staying under the middle of
+      // the screen: it is bound to the coordinate, not to the view.
+      expect(
+        tester.getCenter(find.byKey(const Key('app_map_marker'))).dx,
+        lessThan(marker.dx),
+      );
+    });
+
+    testWidgets('Given the map was moved, When the way back is used, '
+        'Then the view returns and the control goes', (tester) async {
+      // Arrange
+      await pump(tester, isInteractive: true);
+      await tester.drag(
+        find.byKey(const Key('app_map')),
+        const Offset(-260, 0),
+      );
+      await tester.pumpAndSettle();
+
+      // Act
+      await tester.tap(find.byKey(const Key('app_map_recentre')));
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(find.byKey(const Key('app_map_recentre')), findsNothing);
+    });
+
+    testWidgets('Given a map that cannot be moved, When dragged, '
+        'Then nothing happens', (tester) async {
+      // Arrange & Act
+      await pump(tester);
+      await tester.drag(
+        find.byKey(const Key('app_map')),
+        const Offset(-260, 0),
+      );
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(find.byKey(const Key('app_map_recentre')), findsNothing);
+    });
 
     testWidgets('Given a screen reader, When it reaches the map, '
         'Then the precision is spoken', (tester) async {

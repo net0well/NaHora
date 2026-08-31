@@ -191,9 +191,10 @@ class _PunchFlow extends StatelessWidget {
             accuracyMeters: _fix?.accuracyMeters,
             isDegraded: state is PunchLowAccuracy,
 
-            // Not interactive: it sits above a button somebody is about to press
-            // and hold, and a drag meant for the button would pan the map.
-            isInteractive: false,
+            // Movable, so somebody can look around and check they are where
+            // they think. Moving it never moves the mark — the pin is bound to
+            // the coordinate — and the control that appears puts the view back.
+            isInteractive: true,
 
             // PunchFailed included: a failure leaves no reading, and the map must
             // not go on showing a pin next to the error explaining there is none.
