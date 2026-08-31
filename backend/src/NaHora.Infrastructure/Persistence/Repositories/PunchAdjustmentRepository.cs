@@ -67,19 +67,19 @@ public sealed class PunchAdjustmentRepository(NaHoraDbContext dbContext)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<PunchAdjustment>> GetInclusionsForDayAsync(
+    public async Task<IReadOnlyList<PunchAdjustment>> GetInclusionsBetweenAsync(
         Guid companyId,
         Guid employeeId,
-        DateTimeOffset dayStartUtc,
-        DateTimeOffset dayEndUtc,
+        DateTimeOffset startUtc,
+        DateTimeOffset endUtc,
         CancellationToken cancellationToken = default) =>
         await dbContext.PunchAdjustments
             .Where(adjustment => adjustment.CompanyId == companyId
                                  && adjustment.EmployeeId == employeeId
                                  && adjustment.PunchId == null
                                  && adjustment.Status == PunchAdjustmentStatus.Approved
-                                 && adjustment.AdjustedOccurredAt >= dayStartUtc
-                                 && adjustment.AdjustedOccurredAt < dayEndUtc)
+                                 && adjustment.AdjustedOccurredAt >= startUtc
+                                 && adjustment.AdjustedOccurredAt < endUtc)
             .OrderBy(adjustment => adjustment.AdjustedOccurredAt)
             .ToListAsync(cancellationToken);
 }

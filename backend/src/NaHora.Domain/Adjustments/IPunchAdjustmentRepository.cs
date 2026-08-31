@@ -40,11 +40,18 @@ public interface IPunchAdjustmentRepository
         IReadOnlyCollection<Guid> punchIds,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Approved inclusions for one working day, which have no punch behind them.</summary>
-    Task<IReadOnlyList<PunchAdjustment>> GetInclusionsForDayAsync(
+    /// <summary>
+    /// Approved inclusions landing in a UTC window, which have no punch behind
+    /// them.
+    /// </summary>
+    /// <remarks>
+    /// Found by when they say they happened, because an inclusion has no punch
+    /// to be found through. Start inclusive, end exclusive.
+    /// </remarks>
+    Task<IReadOnlyList<PunchAdjustment>> GetInclusionsBetweenAsync(
         Guid companyId,
         Guid employeeId,
-        DateTimeOffset dayStartUtc,
-        DateTimeOffset dayEndUtc,
+        DateTimeOffset startUtc,
+        DateTimeOffset endUtc,
         CancellationToken cancellationToken = default);
 }
