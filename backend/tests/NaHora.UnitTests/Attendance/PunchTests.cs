@@ -183,12 +183,59 @@ public sealed class PunchTests
         mutators.ShouldBeEmpty($"a punch is written once: {string.Join(", ", mutators)}");
     }
 
+    [Fact]
+    public void Register_WithTheSamePositionAsTheLastPunch_NeedsReview()
+    {
+        // Arrange — a GPS standing still drifts by metres between readings and
+        // never repeats itself digit for digit. An exact repeat is a position
+        // being replayed, which is what a fake-location app does on a rooted
+        // device where the mock flag no longer shows.
+        var previous = GeoLocation.Create(-23.5505, -46.6333, 12, Now).Value;
+
+        // Act
+        var result = Register(previousLocation: previous);
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue("Art. 78 forbids refusing the record");
+        result.Value.Trust.ShouldBe(PunchTrust.NeedsReview);
+    }
+
+    [Fact]
+    public void Register_WithAPositionThatMovedAtAll_StaysTrusted()
+    {
+        // Arrange — the rule is "identical", not "nearby". Somebody who punches
+        // in and out from the same desk must not be treated as a suspect.
+        var previous = GeoLocation.Create(-23.55051, -46.6333, 12, Now).Value;
+
+        // Act
+        var result = Register(previousLocation: previous);
+
+        // Assert
+        result.Value.Trust.ShouldBe(PunchTrust.Trusted);
+    }
+
+    [Fact]
+    public void Register_WithTheSamePointButDifferentAccuracy_StillNeedsReview()
+    {
+        // Arrange — accuracy is deliberately not compared: an app that varied
+        // the reported precision while holding the point still would otherwise
+        // slip past.
+        var previous = GeoLocation.Create(-23.5505, -46.6333, 40, Now).Value;
+
+        // Act
+        var result = Register(previousLocation: previous, accuracyMeters: 12);
+
+        // Assert
+        result.Value.Trust.ShouldBe(PunchTrust.NeedsReview);
+    }
+
     private static Shared.Results.Result<Punch> Register(
         string clientId = "client-1",
         PunchOrigin origin = PunchOrigin.Online,
         DateTimeOffset? occurredAt = null,
         double accuracyMeters = 12,
-        DeviceIntegrity? integrity = null)
+        DeviceIntegrity? integrity = null,
+        GeoLocation? previousLocation = null)
     {
         var moment = occurredAt ?? Now;
 
@@ -203,6 +250,7 @@ public sealed class PunchTests
             moment,
             CompanyOffset,
             GeoLocation.Create(-23.5505, -46.6333, accuracyMeters, moment).Value,
-            integrity ?? DeviceIntegrity.Create("device-1", locationWasMocked: false, moment, moment));
+            integrity ?? DeviceIntegrity.Create("device-1", locationWasMocked: false, moment, moment),
+            previousLocation);
     }
 }

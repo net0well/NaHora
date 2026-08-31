@@ -42,6 +42,24 @@ public sealed record GeoLocation
     /// </remarks>
     public DateTimeOffset CapturedAt { get; }
 
+    /// <summary>
+    /// Whether this reading is the very same point as another, digit for digit.
+    /// </summary>
+    /// <remarks>
+    /// Not "nearby". A GPS standing still drifts by metres between readings and
+    /// never returns bit-identical coordinates twice, so an exact repeat is a
+    /// position being replayed rather than measured.
+    ///
+    /// Accuracy is deliberately not compared: a fake-location app that varies
+    /// the reported accuracy while holding the point still would slip past.
+    /// </remarks>
+    public bool IsSamePointAs(GeoLocation other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        return Latitude == other.Latitude && Longitude == other.Longitude;
+    }
+
     public static Result<GeoLocation> Create(
         double latitude,
         double longitude,
