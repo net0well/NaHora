@@ -179,29 +179,34 @@ class _PunchFlow extends StatelessWidget {
       children: [
         const _ExpectedHours(),
         const SizedBox(height: AppSpacing.md),
-        AppMap(
-          height: 190,
-          tileKey: AppConfig.mapTilerKey,
-          latitude: _fix?.latitude,
-          longitude: _fix?.longitude,
-          accuracyMeters: _fix?.accuracyMeters,
-          isDegraded: state is PunchLowAccuracy,
+        // Fills everything down to the message above the button. The map is
+        // what the person checks before marking — a strip of it is enough to
+        // recognise a street, not enough to tell one building from the next.
+        Expanded(
+          child: AppMap(
+            height: double.infinity,
+            tileKey: AppConfig.mapTilerKey,
+            latitude: _fix?.latitude,
+            longitude: _fix?.longitude,
+            accuracyMeters: _fix?.accuracyMeters,
+            isDegraded: state is PunchLowAccuracy,
 
-          // Not interactive: it sits above a button somebody is about to press
-          // and hold, and a drag meant for the button would pan the map.
-          isInteractive: false,
+            // Not interactive: it sits above a button somebody is about to press
+            // and hold, and a drag meant for the button would pan the map.
+            isInteractive: false,
 
-          // PunchFailed included: a failure leaves no reading, and the map must
-          // not go on showing a pin next to the error explaining there is none.
-          isUnavailable:
-              state is PunchLocationUnavailable ||
-              state is PunchLocating ||
-              state is PunchPermissionDenied ||
-              state is PunchFailed,
+            // PunchFailed included: a failure leaves no reading, and the map must
+            // not go on showing a pin next to the error explaining there is none.
+            isUnavailable:
+                state is PunchLocationUnavailable ||
+                state is PunchLocating ||
+                state is PunchPermissionDenied ||
+                state is PunchFailed,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         _StateMessage(state: state),
-        const Spacer(),
+        const SizedBox(height: AppSpacing.md),
         const _ClockButton(),
       ],
     );
