@@ -4,16 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../design_system/components/app_brand_band.dart';
 import '../../../design_system/components/app_button.dart';
 import '../../../design_system/components/app_button_variant.dart';
-import '../../../design_system/components/app_location_preview.dart';
+import '../../../design_system/components/app_map.dart';
 import '../../../design_system/components/punch_clock_button.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/theme/app_radius.dart';
 import '../../../design_system/theme/app_spacing.dart';
 import '../../../design_system/theme/app_typography.dart';
 import '../../auth/presentation/auth_providers.dart';
+import '../domain/captured_location.dart';
 import '../domain/punch_receipt.dart';
 import 'attendance_providers.dart';
 import 'punch_state.dart';
@@ -163,6 +165,13 @@ class _PunchFlow extends StatelessWidget {
 
   final PunchState state;
 
+  /// The reading the screen is showing, or null when it has none.
+  CapturedLocation? get _fix => switch (state) {
+    PunchReady(:final location) => location,
+    PunchLowAccuracy(:final location) => location,
+    _ => null,
+  };
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -170,18 +179,20 @@ class _PunchFlow extends StatelessWidget {
       children: [
         const _ExpectedHours(),
         const SizedBox(height: AppSpacing.md),
-        AppLocationPreview(
+        AppMap(
           height: 190,
-          accuracyMeters: switch (state) {
-            PunchReady(:final location) => location.accuracyMeters,
-            PunchLowAccuracy(:final location) => location.accuracyMeters,
-            _ => null,
-          },
+          tileKey: AppConfig.mapTilerKey,
+          latitude: _fix?.latitude,
+          longitude: _fix?.longitude,
+          accuracyMeters: _fix?.accuracyMeters,
           isDegraded: state is PunchLowAccuracy,
 
-          // PunchFailed included: a failure leaves no reading, and the preview
-          // must not go on showing a confirmation next to the error explaining
-          // that there is none.
+          // Not interactive: it sits above a button somebody is about to press
+          // and hold, and a drag meant for the button would pan the map.
+          isInteractive: false,
+
+          // PunchFailed included: a failure leaves no reading, and the map must
+          // not go on showing a pin next to the error explaining there is none.
           isUnavailable:
               state is PunchLocationUnavailable ||
               state is PunchLocating ||

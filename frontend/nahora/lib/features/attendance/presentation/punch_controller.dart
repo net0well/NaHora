@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../domain/captured_location.dart';
 import '../domain/location_provider.dart';
 import 'attendance_providers.dart';
 import 'punch_state.dart';
@@ -64,7 +65,7 @@ class PunchController extends AutoDisposeNotifier<PunchState> {
     }
   }
 
-  /// Sends the punch.
+  /// Sends the punch, reading the position once more first.
   ///
   /// The identifier is generated here and kept for the whole attempt, so a
   /// retry after a timeout reaches the server as the same punch rather than a
@@ -74,11 +75,15 @@ class PunchController extends AutoDisposeNotifier<PunchState> {
       return;
     }
 
-    final location = switch (state) {
-      PunchReady(:final location) => location,
-      PunchLowAccuracy(:final location) => location,
-      _ => null,
-    };
+    final shown = _locationOn(state);
+
+    state = const PunchSubmitting();
+
+    // Read again, immediately before sending. The fix drawn on the map can be
+    // minutes old by the time a thumb finishes the hold, and what counts is
+    // where the person was when they marked — not where they were when they
+    // opened the screen.
+    final location = await _readAgain() ?? shown;
 
     if (location == null) {
       state = const PunchFailed(
@@ -87,8 +92,6 @@ class PunchController extends AutoDisposeNotifier<PunchState> {
 
       return;
     }
-
-    state = const PunchSubmitting();
 
     try {
       final receipt = await ref
@@ -108,4 +111,25 @@ class PunchController extends AutoDisposeNotifier<PunchState> {
 
   /// Returns to a state where the employee can punch again.
   Future<void> reset() => refreshLocation();
+
+  /// The fix a state is showing, or null when it is showing none.
+  static CapturedLocation? _locationOn(PunchState state) => switch (state) {
+    PunchReady(:final location) => location,
+    PunchLowAccuracy(:final location) => location,
+    _ => null,
+  };
+
+  /// One more reading, on the way out.
+  ///
+  /// A failure here is not a reason to refuse: the punch goes with the fix
+  /// already on screen, and if there is none the server still records the mark
+  /// and classifies it. Nothing on the client may stop a registration —
+  /// Portaria 671, Art. 78 §1º.
+  Future<CapturedLocation?> _readAgain() async {
+    try {
+      return await ref.read(locationProviderProvider).currentLocation();
+    } on Object {
+      return null;
+    }
+  }
 }

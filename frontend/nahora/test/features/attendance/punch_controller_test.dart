@@ -149,6 +149,44 @@ void main() {
       expect(container.read(punchControllerProvider), isA<PunchConfirmed>());
     });
 
+    test('Given the screen has been open a while, When punched, '
+        'Then the position is read again before sending', () async {
+      // Arrange — the fix drawn on the map can be minutes old by the time a
+      // thumb finishes the hold, and what counts is where the person was when
+      // they marked
+      location.position = _locationWith(accuracyMeters: 10);
+      final container = buildContainer();
+      await settled(container);
+
+      final onOpening = location.handedOut.length;
+      location.position = _locationWith(accuracyMeters: 4);
+
+      // Act
+      await container.read(punchControllerProvider.notifier).punch();
+
+      // Assert
+      expect(location.handedOut.length, onOpening + 1);
+      expect(repository.sentLocations.single.accuracyMeters, 4);
+    });
+
+    test('Given the second reading fails, When punched, '
+        'Then it goes with the one already on screen', () async {
+      // Arrange — a failed re-read is not a reason to refuse. Nothing on the
+      // client may stop a registration: Art. 78 §1º.
+      location.position = _locationWith(accuracyMeters: 10);
+      final container = buildContainer();
+      await settled(container);
+
+      location.failsToLocate = true;
+
+      // Act
+      await container.read(punchControllerProvider.notifier).punch();
+
+      // Assert
+      expect(repository.sentLocations.single.accuracyMeters, 10);
+      expect(container.read(punchControllerProvider), isA<PunchConfirmed>());
+    });
+
     test(
       'Given a punch, When sent, Then no time is sent as the official one',
       () async {

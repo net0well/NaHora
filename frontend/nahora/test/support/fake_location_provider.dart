@@ -14,6 +14,10 @@ class FakeLocationProvider implements LocationProvider {
 
   int requestCount = 0;
 
+  /// Every fix handed out, in order. The punch screen reads once on opening
+  /// and once more on the way out, and a test needs to tell the two apart.
+  final List<CapturedLocation> handedOut = [];
+
   @override
   Future<LocationPermissionState> checkPermission() async => permission;
 
@@ -32,6 +36,8 @@ class FakeLocationProvider implements LocationProvider {
     if (failsToLocate || position == null) {
       throw StateError('no fix');
     }
+
+    handedOut.add(position!);
 
     return position!;
   }
