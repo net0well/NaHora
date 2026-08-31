@@ -102,7 +102,7 @@ class _History extends ConsumerWidget {
           children: [
             for (final entry in day.value) ...[
               PunchEntryTile(
-                key: Key('history_entry_${entry.nsr}'),
+                key: Key('history_entry_${entry.id}'),
                 time: entry.timeLabel,
                 direction: entry.note == null
                     ? entry.direction.label

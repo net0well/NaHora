@@ -173,7 +173,7 @@ class _Today extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         for (final entry in day.entries) ...[
           PunchEntryTile(
-            key: Key('punch_entry_${entry.nsr}'),
+            key: Key('punch_entry_${entry.id}'),
             time: entry.timeLabel,
             direction: entry.note == null
                 ? entry.direction.label
