@@ -11,6 +11,7 @@ import '../../../design_system/components/punch_entry_tile.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/theme/app_spacing.dart';
 import '../../../design_system/theme/app_typography.dart';
+import '../../adjustments/presentation/request_adjustment_sheet.dart';
 import '../../attendance/domain/punch_entry.dart';
 import '../../attendance/domain/punch_history_page.dart';
 import '../../attendance/presentation/attendance_providers.dart';
@@ -185,7 +186,16 @@ class _DayActions extends StatelessWidget {
           label: 'Solicitar ajuste',
           variant: AppButtonVariant.secondary,
           expanded: true,
-          onPressed: null,
+          onPressed: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: AppColors.surface,
+            builder: (_) => RequestAdjustmentSheet(
+              dayLabel: _dayLabel(day),
+              localDate: day,
+              entries: entries,
+            ),
+          ),
         ),
       ],
     );

@@ -3,6 +3,7 @@ import 'package:nahora/features/adjustments/data/adjustments_repository.dart';
 import 'package:nahora/features/adjustments/domain/adjustment.dart';
 import 'package:nahora/features/adjustments/domain/adjustment_kind.dart';
 import 'package:nahora/features/adjustments/domain/adjustment_status.dart';
+import 'package:nahora/features/adjustments/domain/justification.dart';
 import 'package:nahora/features/attendance/domain/punch_direction.dart';
 
 /// A stand-in for the adjustment endpoints.
@@ -58,6 +59,93 @@ class FakeAdjustmentsRepository implements AdjustmentsRepository {
 
     return decided;
   }
+
+  /// The catalogue the form offers.
+  List<Justification> catalogue = [forgot, other];
+
+  /// Every correction asked for, in order. Named apart from [requests],
+  /// which is what the queue reads back.
+  final List<
+    ({
+      String justificationId,
+      String? punchId,
+      DateTime occurredAt,
+      String? direction,
+      String? notes,
+    })
+  >
+  asked = [];
+
+  /// Every attachment sent, by adjustment.
+  final Map<String, String> attachments = {};
+
+  /// Thrown by [request] when set.
+  AppException? requestFailure;
+
+  /// Thrown by [attach] when set — the upload failing while the request itself
+  /// went through is the case worth being able to reproduce.
+  AppException? attachFailure;
+
+  @override
+  Future<List<Justification>> justifications() async {
+    if (failure != null) {
+      throw failure!;
+    }
+
+    return catalogue;
+  }
+
+  @override
+  Future<Adjustment> request({
+    required String justificationId,
+    required DateTime occurredAt,
+    String? punchId,
+    String? direction,
+    String? notes,
+  }) async {
+    asked.add((
+      justificationId: justificationId,
+      punchId: punchId,
+      occurredAt: occurredAt,
+      direction: direction,
+      notes: notes,
+    ));
+
+    if (requestFailure != null) {
+      throw requestFailure!;
+    }
+
+    return pending(id: 'adjustment-new');
+  }
+
+  @override
+  Future<void> attach({
+    required String adjustmentId,
+    required String filePath,
+  }) async {
+    if (attachFailure != null) {
+      throw attachFailure!;
+    }
+
+    attachments[adjustmentId] = filePath;
+  }
+
+  static const Justification forgot = Justification(
+    id: 'justification-1',
+    code: 'FORGOT_TO_PUNCH',
+    description: 'Esquecimento de marcação',
+    requiresNotes: false,
+    displayOrder: 1,
+  );
+
+  /// The catch-all, which the form must refuse to submit without text.
+  static const Justification other = Justification(
+    id: 'justification-9',
+    code: 'OTHER',
+    description: 'Outro',
+    requiresNotes: true,
+    displayOrder: 9,
+  );
 
   /// One pending request, with the fields a queue actually renders.
   ///
