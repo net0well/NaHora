@@ -143,6 +143,104 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NaHora.Domain.Adjustments.PunchAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("AdjustedOccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("adjusted_occurred_at");
+
+                    b.Property<string>("AttachmentKey")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("attachment_key");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by_user_id");
+
+                    b.Property<string>("DecisionNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("decision_notes");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("direction");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<Guid>("JustificationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("justification_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTimeOffset?>("OriginalOccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("original_occurred_at");
+
+                    b.Property<Guid?>("PunchId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("punch_id");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_punch_adjustments");
+
+                    b.HasIndex("JustificationId")
+                        .HasDatabaseName("i_x_punch_adjustments_justification_id");
+
+                    b.HasIndex("PunchId")
+                        .HasDatabaseName("i_x_punch_adjustments_punch_id");
+
+                    b.HasIndex("CompanyId", "Status")
+                        .HasDatabaseName("ix_punch_adjustments_company_status");
+
+                    b.HasIndex("EmployeeId", "RequestedAt")
+                        .HasDatabaseName("ix_punch_adjustments_employee_requested_at");
+
+                    b.ToTable("punch_adjustments", (string)null);
+                });
+
             modelBuilder.Entity("NaHora.Domain.Attendance.CompanyNsrCounter", b =>
                 {
                     b.Property<Guid>("Id")
@@ -489,6 +587,71 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                     b.ToTable("employees", (string)null);
                 });
 
+            modelBuilder.Entity("NaHora.Domain.Scheduling.CompanyWorkSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_company_work_schedules");
+
+                    b.HasIndex("CompanyId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_company_work_schedules_company");
+
+                    b.ToTable("company_work_schedules", (string)null);
+                });
+
+            modelBuilder.Entity("NaHora.Domain.Scheduling.EmployeeWorkSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.HasKey("Id")
+                        .HasName("p_k_employee_work_schedules");
+
+                    b.HasIndex("EmployeeId", "EffectiveFrom")
+                        .HasDatabaseName("ix_employee_work_schedules_employee_effective_from");
+
+                    b.ToTable("employee_work_schedules", (string)null);
+                });
+
             modelBuilder.Entity("NaHora.Domain.Users.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -731,6 +894,29 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NaHora.Domain.Adjustments.PunchAdjustment", b =>
+                {
+                    b.HasOne("NaHora.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("f_k_punch_adjustments_employees_employee_id");
+
+                    b.HasOne("NaHora.Domain.Adjustments.AdjustmentJustification", null)
+                        .WithMany()
+                        .HasForeignKey("JustificationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("f_k_punch_adjustments_adjustment_justifications_justification_id");
+
+                    b.HasOne("NaHora.Domain.Attendance.Punch", null)
+                        .WithMany()
+                        .HasForeignKey("PunchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("f_k_punch_adjustments_punches_punch_id");
+                });
+
             modelBuilder.Entity("NaHora.Domain.Attendance.Punch", b =>
                 {
                     b.HasOne("NaHora.Domain.Employees.Employee", null)
@@ -876,6 +1062,90 @@ namespace NaHora.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Address");
+                });
+
+            modelBuilder.Entity("NaHora.Domain.Scheduling.CompanyWorkSchedule", b =>
+                {
+                    b.OwnsMany("NaHora.Domain.Scheduling.WorkDaySchedule", "Days", b1 =>
+                        {
+                            b1.Property<Guid>("company_work_schedule_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("company_work_schedule_id");
+
+                            b1.Property<string>("Day")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("day_of_week");
+
+                            b1.Property<TimeOnly?>("EndTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("end_time");
+
+                            b1.Property<TimeOnly?>("LunchEndTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("lunch_end_time");
+
+                            b1.Property<TimeOnly?>("LunchStartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("lunch_start_time");
+
+                            b1.Property<TimeOnly?>("StartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("start_time");
+
+                            b1.HasKey("company_work_schedule_id", "Day")
+                                .HasName("p_k_company_work_schedule_days");
+
+                            b1.ToTable("company_work_schedule_days", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("company_work_schedule_id")
+                                .HasConstraintName("f_k_company_work_schedule_days_company_work_schedules_company_w~");
+                        });
+
+                    b.Navigation("Days");
+                });
+
+            modelBuilder.Entity("NaHora.Domain.Scheduling.EmployeeWorkSchedule", b =>
+                {
+                    b.OwnsMany("NaHora.Domain.Scheduling.WorkDaySchedule", "Days", b1 =>
+                        {
+                            b1.Property<Guid>("employee_work_schedule_id")
+                                .HasColumnType("uuid")
+                                .HasColumnName("employee_work_schedule_id");
+
+                            b1.Property<string>("Day")
+                                .HasMaxLength(16)
+                                .HasColumnType("character varying(16)")
+                                .HasColumnName("day_of_week");
+
+                            b1.Property<TimeOnly?>("EndTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("end_time");
+
+                            b1.Property<TimeOnly?>("LunchEndTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("lunch_end_time");
+
+                            b1.Property<TimeOnly?>("LunchStartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("lunch_start_time");
+
+                            b1.Property<TimeOnly?>("StartTime")
+                                .HasColumnType("time without time zone")
+                                .HasColumnName("start_time");
+
+                            b1.HasKey("employee_work_schedule_id", "Day")
+                                .HasName("p_k_employee_work_schedule_days");
+
+                            b1.ToTable("employee_work_schedule_days", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("employee_work_schedule_id")
+                                .HasConstraintName("f_k_employee_work_schedule_days_employee_work_schedules_employe~");
+                        });
+
+                    b.Navigation("Days");
                 });
 
             modelBuilder.Entity("NaHora.Domain.Users.RefreshToken", b =>

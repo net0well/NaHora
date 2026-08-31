@@ -5,6 +5,7 @@ using Microsoft.Extensions.Http.Resilience;
 using NaHora.Domain.Companies;
 using NaHora.Domain.RealTime;
 using NaHora.Infrastructure.Configuration;
+using NaHora.Infrastructure.Notifications;
 using NaHora.Infrastructure.Persistence;
 using NaHora.Infrastructure.RealTime;
 using NaHora.Infrastructure.Registry;
@@ -62,6 +63,11 @@ public static class InfrastructureServiceRegistration
         services.AddHttpContextAccessor();
 
         AddRegistryLookup(services, configuration);
+
+        services.AddOptions<SmtpOptions>()
+            .Bind(configuration.GetSection(SmtpOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         AddRealTime(services, configuration);
 

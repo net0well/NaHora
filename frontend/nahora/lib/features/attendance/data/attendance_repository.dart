@@ -6,7 +6,9 @@ import '../domain/captured_location.dart';
 import '../domain/punch_day.dart';
 import '../domain/punch_direction.dart';
 import '../domain/punch_history_page.dart';
+import '../domain/punch_location.dart';
 import '../domain/punch_receipt.dart';
+import '../domain/work_day.dart';
 
 /// Talks to the attendance endpoints.
 // Named parameters keep the call site readable while the field stays private.
@@ -46,6 +48,7 @@ class AttendanceRepository {
     required CapturedLocation location,
     required String deviceId,
     required DateTime deviceClockAt,
+    OfflineEstimate? offline,
   }) async {
     try {
       final response = await _client.post<Map<String, dynamic>>(
@@ -63,6 +66,14 @@ class AttendanceRepository {
             'locationWasMocked': location.isMocked,
             'deviceClockAt': deviceClockAt.toUtc().toIso8601String(),
           },
+          if (offline != null)
+            'offline': {
+              'occurredAtEstimate': offline.occurredAt
+                  .toUtc()
+                  .toIso8601String(),
+              'monotonicSinceBootMs': offline.monotonicElapsedMs,
+              'anchorAt': offline.anchorAt.toUtc().toIso8601String(),
+            },
         },
       );
 
@@ -107,6 +118,50 @@ class AttendanceRepository {
     }
   }
 
+  /// The hours the signed-in person is expected to work.
+  ///
+  /// The employee's own when they have any, the company's otherwise. Shown
+  /// above the punch button so somebody recording a punch can see what the day
+  /// was supposed to be — it never stops them recording it.
+  Future<WorkSchedule> workSchedule() async {
+    try {
+      final response = await _client.get<Map<String, dynamic>>(
+        '/api/v1/schedules/me',
+      );
+      final body = response.data;
+
+      if (body == null) {
+        throw const UnexpectedException();
+      }
+
+      return WorkSchedule.fromJson(body);
+    } on DioException catch (exception) {
+      throw ApiExceptionMapper.map(exception);
+    }
+  }
+
+  /// Where one mark was made.
+  ///
+  /// One at a time, because that is what the server answers. The listings carry
+  /// no coordinates on purpose, so this is the only way the app ever learns a
+  /// position it did not itself just capture.
+  Future<PunchLocation> punchLocation(String punchId) async {
+    try {
+      final response = await _client.get<Map<String, dynamic>>(
+        '/api/v1/punches/$punchId/location',
+      );
+
+      final body = response.data;
+      if (body == null) {
+        throw const UnexpectedException();
+      }
+
+      return PunchLocation.fromJson(body);
+    } on DioException catch (exception) {
+      throw ApiExceptionMapper.map(exception);
+    }
+  }
+
   /// A page of the employee's own history, newest first.
   Future<PunchHistoryPage> history({int page = 1, int pageSize = 30}) async {
     try {
@@ -137,4 +192,25 @@ class ServerTime {
   /// device: a phone with an outdated timezone database would compute a
   /// different one after a daylight-saving change.
   final Duration utcOffset;
+}
+
+/// The time a queued punch claims, and how the app arrived at it.
+///
+/// Sent only for a punch that waited on the device. Online the server stamps
+/// the time and the client has no say.
+class OfflineEstimate {
+  const OfflineEstimate({
+    required this.occurredAt,
+    required this.monotonicElapsedMs,
+    required this.anchorAt,
+  });
+
+  final DateTime occurredAt;
+
+  /// The monotonic reading when the punch was made, so the estimate can be
+  /// audited rather than merely believed.
+  final int monotonicElapsedMs;
+
+  /// The server instant the estimate counts from.
+  final DateTime anchorAt;
 }

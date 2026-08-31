@@ -279,6 +279,44 @@ public sealed class Company : AggregateRoot
     public static DateOnly LocalDateAt(string timeZoneId, DateTimeOffset instant) =>
         DateOnly.FromDateTime((instant + OffsetAt(timeZoneId, instant)).DateTime);
 
+    /// <summary>
+    /// The UTC interval covering one local day, start inclusive, end exclusive.
+    /// </summary>
+    /// <remarks>
+    /// What a query needs to ask for "everything that happened on the 30th"
+    /// against a column stored in UTC.
+    ///
+    /// The offset is sampled at local noon of each day rather than at midnight.
+    /// Midnight is exactly where a daylight-saving change can land — Brazil's
+    /// own former rule moved the clock at midnight — and sampling inside the
+    /// gap gives an offset for a wall time that never existed. Noon is never in
+    /// one.
+    /// </remarks>
+    public static (DateTimeOffset StartUtc, DateTimeOffset EndUtc) LocalDayWindow(
+        string timeZoneId,
+        DateOnly localDate)
+    {
+        var nextDate = localDate.AddDays(1);
+
+        var startOffset = OffsetAtLocalNoon(timeZoneId, localDate);
+        var endOffset = OffsetAtLocalNoon(timeZoneId, nextDate);
+
+        return (
+            new DateTimeOffset(localDate.ToDateTime(TimeOnly.MinValue), startOffset).ToUniversalTime(),
+            new DateTimeOffset(nextDate.ToDateTime(TimeOnly.MinValue), endOffset).ToUniversalTime());
+    }
+
+    private static TimeSpan OffsetAtLocalNoon(string timeZoneId, DateOnly localDate)
+    {
+        if (!TimeZoneInfo.TryFindSystemTimeZoneById(timeZoneId, out var zone))
+        {
+            return TimeSpan.Zero;
+        }
+
+        return zone.GetUtcOffset(
+            DateTime.SpecifyKind(localDate.ToDateTime(new TimeOnly(12, 0)), DateTimeKind.Unspecified));
+    }
+
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 

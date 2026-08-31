@@ -1,26 +1,22 @@
 <Project>
-
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
-
   <!--
     Every package here must have its license verified before being added.
     AutoMapper, MediatR v13+, MassTransit v9, FluentAssertions v8+ and
     SixLabors.ImageSharp v3+ are commercial and must not be referenced.
     Versions are concrete on purpose: a floating "*" breaks reproducible builds.
   -->
-
   <ItemGroup Label="Runtime">
+    <PackageVersion Include="MailKit" Version="4.17.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
   </ItemGroup>
-
   <ItemGroup Label="Web">
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.2.3" />
   </ItemGroup>
-
   <ItemGroup Label="CQRS and messaging">
     <PackageVersion Include="WolverineFX" Version="6.30.3" />
     <PackageVersion Include="WolverineFX.Http" Version="6.30.3" />
@@ -29,7 +25,6 @@
     <PackageVersion Include="WolverineFx.Postgresql" Version="6.30.3" />
     <PackageVersion Include="WolverineFx.RuntimeCompilation" Version="6.30.3" />
   </ItemGroup>
-
   <ItemGroup Label="Authentication">
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.22.0" />
@@ -37,21 +32,17 @@
          which is what PBKDF2 and BCrypt lack. -->
     <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
   </ItemGroup>
-
   <ItemGroup Label="Validation">
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
   </ItemGroup>
-
   <ItemGroup Label="Persistence">
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
-
   <ItemGroup Label="Object storage">
     <PackageVersion Include="Minio" Version="7.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="Observability">
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0" />
@@ -62,12 +53,10 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.18.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
   </ItemGroup>
-
   <ItemGroup Label="Resilience">
     <!-- Wraps Polly v8 and plugs into IHttpClientFactory. MIT. -->
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
   </ItemGroup>
-
   <ItemGroup Label="Testing">
     <PackageVersion Include="xunit.v3" Version="4.0.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
@@ -75,5 +64,4 @@
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
   </ItemGroup>
-
 </Project>

@@ -5,6 +5,7 @@ using NaHora.Domain.Adjustments;
 using NaHora.Domain.Attendance;
 using NaHora.Domain.Companies;
 using NaHora.Domain.Employees;
+using NaHora.Domain.Scheduling;
 using NaHora.Domain.Users;
 using Wolverine.EntityFrameworkCore;
 
@@ -27,6 +28,29 @@ public sealed class NaHoraDbContext(
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public DbSet<Punch> Punches => Set<Punch>();
+
+    /// <summary>
+    /// Corrections to time records.
+    /// </summary>
+    /// <remarks>
+    /// Never modifies <see cref="Punches"/>. A treatment points at a punch and
+    /// says which time should count; the punch itself is append-only, enforced
+    /// by a database trigger rather than by convention.
+    /// </remarks>
+    public DbSet<PunchAdjustment> PunchAdjustments => Set<PunchAdjustment>();
+
+    /// <summary>The hours each company works by default. One row per company.</summary>
+    public DbSet<CompanyWorkSchedule> CompanyWorkSchedules => Set<CompanyWorkSchedule>();
+
+    /// <summary>
+    /// Per-employee hours, versioned by effective period.
+    /// </summary>
+    /// <remarks>
+    /// Several rows per employee is normal: changing somebody's hours closes
+    /// the current period and opens another, so a day is always judged against
+    /// what was in force then.
+    /// </remarks>
+    public DbSet<EmployeeWorkSchedule> EmployeeWorkSchedules => Set<EmployeeWorkSchedule>();
 
     /// <summary>
     /// The fixed catalogue of reasons a punch may be corrected for.

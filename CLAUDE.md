@@ -293,6 +293,37 @@ sofre rollback, e uma transação abortada deixaria um número gasto.
 redigidas pelo `SensitiveDataPolicy` e não viram label de métrica — um par
 funcionário/coordenada diz onde a pessoa estava naquele minuto.
 
+### Mapa e localização
+
+**MapTiler.** Não Google Maps, não tiles do OpenStreetMap. A chave vem por
+`--dart-define`, nunca de arquivo versionado.
+
+A tela de marcação segue esta ordem, e a releitura do passo 4 não é opcional:
+
+```
+abre a tela
+   ↓ lê a localização
+mostra o mapa com o marcador
+   ↓ a pessoa confirma
+lê a localização de novo
+   ↓ valida a precisão
+grava a batida
+```
+
+A coordenada exibida pode ter minutos de idade quando o dedo encosta no botão.
+O que vale é onde a pessoa estava ao marcar, não onde estava ao abrir o app — e
+é a coordenada relida que viaja para o servidor.
+
+**Latitude e longitude ficam no servidor; a listagem não as devolve.** Só a
+consulta de uma batida específica responde com coordenada, e só quando a pessoa
+pede para ver no mapa. Devolvê-las em toda listagem colocaria um mapa de onde a
+pessoa esteve no aparelho mais fácil de perder ou tomar.
+
+**Antifraude nos dois lados.** App de localização falsa, root, emulador,
+coordenada idêntica ao milímetro entre marcações: tudo isso é detectado e
+registrado. Nada disso impede o registro — Art. 78 §1º —, apenas muda a
+classificação de confiança e acende o sinal para o gestor.
+
 ### Isolamento multiempresa
 
 Toda entidade de negócio implementa `ITenantOwned`. Isolamento aplicado em duas

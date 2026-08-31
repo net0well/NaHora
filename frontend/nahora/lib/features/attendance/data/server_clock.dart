@@ -34,6 +34,16 @@ class ServerClock {
     _anchorElapsed = _monotonic.elapsed;
   }
 
+  /// The monotonic reading now, in milliseconds.
+  ///
+  /// Travels with a queued punch so the estimate can be audited rather than
+  /// merely believed: the anchor plus this is exactly how the app arrived at
+  /// the time it claims.
+  int get monotonicElapsedMs => _monotonic.elapsed.inMilliseconds;
+
+  /// The server instant this clock counts from, or null while unsynchronised.
+  DateTime? get anchorAt => _anchorServerTime;
+
   /// The official time now, or null while unsynchronised.
   DateTime? nowUtc() {
     final anchor = _anchorServerTime;

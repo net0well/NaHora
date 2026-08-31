@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../design_system/components/app_button.dart';
+import '../../../design_system/components/app_button_variant.dart';
 import '../../../design_system/components/app_empty_state.dart';
 import '../../../design_system/components/app_error_state.dart';
+import '../../../design_system/components/app_expandable_day.dart';
 import '../../../design_system/components/app_loading.dart';
 import '../../../design_system/components/punch_entry_tile.dart';
 import '../../../design_system/theme/app_colors.dart';
 import '../../../design_system/theme/app_spacing.dart';
 import '../../../design_system/theme/app_typography.dart';
+import '../../adjustments/presentation/request_adjustment_sheet.dart';
 import '../../attendance/domain/punch_entry.dart';
 import '../../attendance/domain/punch_history_page.dart';
 import '../../attendance/presentation/attendance_providers.dart';
+import '../../attendance/presentation/day_locations_sheet.dart';
 import '../../attendance/presentation/punch_entry_formatting.dart';
 
-/// Every punch the employee has, newest first.
+/// Every punch the employee has, one row per day.
 ///
 /// Portaria 671 gives them the right to their own record. This is where that
 /// right stops being a sentence in a spec.
@@ -78,44 +83,57 @@ class _History extends ConsumerWidget {
 
     final days = _groupByDay(page.entries);
 
-    return ListView.builder(
+    return ListView.separated(
       key: const Key('history_tab_list'),
       padding: EdgeInsets.zero,
       itemCount: days.length,
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
         final day = days[index];
 
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                _dayLabel(day.key),
-                style: AppTypography.labelSmall.copyWith(
-                  color: AppColors.textSecondary,
-                ),
+        return AppExpandableDay(
+          key: Key('history_day_${day.key}'),
+          title: _dayLabel(day.key),
+          summary: _summarise(day.value),
+
+          // The most recent day starts open. It is the one somebody came for
+          // in almost every visit, and making them tap for it is a tap for
+          // nothing.
+          initiallyExpanded: index == 0,
+          trailing: _DayActions(day: day.key, entries: day.value),
+          children: [
+            for (final entry in day.value) ...[
+              PunchEntryTile(
+                key: Key('history_entry_${entry.id}'),
+                time: entry.timeLabel,
+                direction: entry.note == null
+                    ? entry.direction.label
+                    : '${entry.direction.label} · ${entry.note}',
+                tone: entry.tone,
               ),
               const SizedBox(height: AppSpacing.sm),
-              for (final entry in day.value) ...[
-                PunchEntryTile(
-                  time: entry.timeLabel,
-                  direction: entry.note == null
-                      ? entry.direction.label
-                      : '${entry.direction.label} · ${entry.note}',
-                  tone: entry.tone,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
             ],
-          ),
+          ],
         );
       },
     );
   }
 
-  /// Groups by the working day the server decided, preserving the order the
-  /// server sent.
+  /// "4 marcações · 08:02 às 17:05"
+  static String _summarise(List<PunchEntry> entries) {
+    final count = entries.length;
+    final noun = count == 1 ? 'marcação' : 'marcações';
+
+    // Ordered by time rather than by arrival: the list comes newest first, and
+    // a summary reading "17:05 às 08:02" would look like a mistake.
+    final times = entries.map((entry) => entry.timeLabel).toList()..sort();
+
+    return times.first == times.last
+        ? '$count $noun · ${times.first}'
+        : '$count $noun · ${times.first} às ${times.last}';
+  }
+
+  /// Groups by the working day the server decided, preserving its order.
   ///
   /// Grouping on a date recomputed from the timestamp would split one working
   /// day in two for anyone whose phone sits in another timezone.
@@ -129,6 +147,66 @@ class _History extends ConsumerWidget {
     }
 
     return days.entries.toList();
+  }
+}
+
+/// What can be done about a day, rather than about one punch.
+class _DayActions extends StatelessWidget {
+  const _DayActions({required this.day, required this.entries});
+
+  final String day;
+  final List<PunchEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    // Stacked, not side by side: the two labels together are wider than a card
+    // on a phone leaves, and they are distinct actions rather than a pair.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppButton(
+          key: Key('history_map_$day'),
+          label: 'Ver localização',
+          variant: AppButtonVariant.secondary,
+          expanded: true,
+
+          // Opens on request, and only then does a coordinate reach the
+          // device. No listing carries one.
+          onPressed: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+
+            // Kept below the status bar. A full-height sheet without this
+            // draws its title under the clock and the battery icon.
+            useSafeArea: true,
+            backgroundColor: AppColors.surface,
+            builder: (_) =>
+                DayLocationsSheet(dayLabel: _dayLabel(day), entries: entries),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        AppButton(
+          key: Key('history_adjust_$day'),
+          label: 'Solicitar ajuste',
+          variant: AppButtonVariant.secondary,
+          expanded: true,
+          onPressed: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+
+            // Kept below the status bar. A full-height sheet without this
+            // draws its title under the clock and the battery icon.
+            useSafeArea: true,
+            backgroundColor: AppColors.surface,
+            builder: (_) => RequestAdjustmentSheet(
+              dayLabel: _dayLabel(day),
+              localDate: day,
+              entries: entries,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

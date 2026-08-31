@@ -64,13 +64,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // The mark carries the name, so there is no separate title.
+                  // Printing "NaHora" underneath would say it twice.
+                  //
+                  // The asset is transparent and trimmed to what is drawn, so
+                  // it sits on the page rather than on a block of its own —
+                  // see tool/make_transparent_logo.py.
                   Semantics(
                     header: true,
-                    child: Text('NaHora', style: AppTypography.displayLarge),
+                    label: 'NaHora',
+                    child: ExcludeSemantics(
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/nahora-logo.png',
+                          key: const Key('login_logo'),
+                          height: 240,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.lg),
+                  // Centred under the mark, so the two read as one block
+                  // rather than as a heading with a stray line beside it.
                   Text(
-                    'Entre para marcar seu ponto',
+                    'Seu app de marcar ponto',
+                    textAlign: TextAlign.center,
                     style: AppTypography.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),

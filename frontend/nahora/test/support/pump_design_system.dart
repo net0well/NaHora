@@ -19,7 +19,14 @@ Future<void> pumpComponent(WidgetTester tester, Widget component) async {
       data: AppTheme.shad(),
       child: MaterialApp(
         theme: AppTheme.dark(),
-        home: Scaffold(body: Center(child: component)),
+
+        // Reduce motion, which is what a repeating animation needs for
+        // pumpAndSettle to ever return. A test that wants the animation asks
+        // for it and pumps by hand.
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: Scaffold(body: Center(child: component)),
+        ),
       ),
     ),
   );
@@ -42,7 +49,13 @@ Future<void> pumpScreen(
       overrides: overrides,
       child: ShadTheme(
         data: AppTheme.shad(),
-        child: MaterialApp(theme: AppTheme.dark(), home: screen),
+        child: MaterialApp(
+          theme: AppTheme.dark(),
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: screen,
+          ),
+        ),
       ),
     ),
   );

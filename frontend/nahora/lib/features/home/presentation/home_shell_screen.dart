@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../design_system/components/app_tab_shell.dart';
 import '../../attendance/presentation/attendance_providers.dart';
+import '../../attendance/presentation/server_clock_controller.dart';
 import 'employee_tab.dart';
 import 'history_tab.dart';
 
@@ -22,6 +25,27 @@ class HomeShellScreen extends ConsumerStatefulWidget {
 
 class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
   AppTab _tab = AppTab.employee;
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Repaints the clock face once a second. The clock itself advances from its
+    // monotonic anchor whether or not anything is watching; this only moves the
+    // hands.
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
 
   /// Opens the punch screen and reloads what it may have changed.
   ///
@@ -41,17 +65,34 @@ class _HomeShellScreenState extends ConsumerState<HomeShellScreen> {
       ..invalidate(punchHistoryProvider);
   }
 
+  /// The official time in company hours, or null until the clock has synced.
+  ///
+  /// Never the device clock. A phone running two hours fast would put the wrong
+  /// time on the button that records the right one.
+  DateTime? _officialTime() {
+    final utc = ref.read(serverClockProvider).nowUtc();
+    if (utc == null) {
+      return null;
+    }
+
+    return utc.add(ref.read(serverClockControllerProvider.notifier).offset);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Watched so the clock synchronises as soon as the shell appears, rather
+    // than only when somebody opens the punch screen.
+    ref.watch(serverClockControllerProvider);
+
     return AppTabShell(
       currentTab: _tab,
       onTabSelected: (tab) => setState(() => _tab = tab),
       onPrimaryAction: _punchThenRefresh,
 
-      // A clock, not a fingerprint. The product confirms by location and reads
-      // no biometrics; an icon suggesting otherwise would promise something it
-      // does not deliver, to the person least able to check.
-      primaryIcon: Icons.schedule,
+      // A live clock face, not a fingerprint. The product confirms by location
+      // and reads no biometrics; a fingerprint would promise something it does
+      // not deliver, to the person least able to check.
+      primaryTime: _officialTime(),
       child: switch (_tab) {
         AppTab.employee => const EmployeeTab(),
         AppTab.history => const HistoryTab(),

@@ -4,15 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../design_system/components/app_brand_band.dart';
 import '../../../design_system/components/app_button.dart';
 import '../../../design_system/components/app_button_variant.dart';
-import '../../../design_system/components/app_location_preview.dart';
+import '../../../design_system/components/app_map.dart';
 import '../../../design_system/components/punch_clock_button.dart';
 import '../../../design_system/theme/app_colors.dart';
+import '../../../design_system/theme/app_radius.dart';
 import '../../../design_system/theme/app_spacing.dart';
 import '../../../design_system/theme/app_typography.dart';
 import '../../auth/presentation/auth_providers.dart';
+import '../domain/captured_location.dart';
 import '../domain/punch_receipt.dart';
 import 'attendance_providers.dart';
 import 'punch_state.dart';
@@ -84,38 +87,127 @@ void _leave(BuildContext context, WidgetRef ref) {
   }
 }
 
-/// Location, then the clock button. Nothing between them.
+/// The hours the day was supposed to run.
+///
+/// Sits above the location so the employee reads the expectation before the
+/// evidence. Silent when nobody has set a schedule: an invented nine-to-five
+/// would be the app asserting hours nobody agreed to.
+class _ExpectedHours extends ConsumerWidget {
+  const _ExpectedHours();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final schedule = ref.watch(workScheduleProvider);
+
+    return schedule.maybeWhen(
+      data: (value) => value.today.isWorkday
+          ? _Line(source: value.source.label, hours: value.today.describe)
+          : const SizedBox.shrink(),
+
+      // Loading and failure are both silent. The schedule is context, and a
+      // spinner or an error above the punch button would read as something
+      // standing between the employee and recording their time.
+      orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _Line extends StatelessWidget {
+  const _Line({required this.source, required this.hours});
+
+  final String source;
+  final String hours;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$source: $hours',
+      child: ExcludeSemantics(
+        child: Container(
+          key: const Key('punch_expected_hours'),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                source,
+                style: AppTypography.labelSmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                hours,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Expected hours, location, then the clock button.
 class _PunchFlow extends StatelessWidget {
   const _PunchFlow({required this.state});
 
   final PunchState state;
+
+  /// The reading the screen is showing, or null when it has none.
+  CapturedLocation? get _fix => switch (state) {
+    PunchReady(:final location) => location,
+    PunchLowAccuracy(:final location) => location,
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppLocationPreview(
-          height: 190,
-          accuracyMeters: switch (state) {
-            PunchReady(:final location) => location.accuracyMeters,
-            PunchLowAccuracy(:final location) => location.accuracyMeters,
-            _ => null,
-          },
-          isDegraded: state is PunchLowAccuracy,
+        const _ExpectedHours(),
+        const SizedBox(height: AppSpacing.md),
+        // Fills everything down to the message above the button. The map is
+        // what the person checks before marking — a strip of it is enough to
+        // recognise a street, not enough to tell one building from the next.
+        Expanded(
+          child: AppMap(
+            height: double.infinity,
+            tileKey: AppConfig.mapTilerKey,
+            latitude: _fix?.latitude,
+            longitude: _fix?.longitude,
+            accuracyMeters: _fix?.accuracyMeters,
+            isDegraded: state is PunchLowAccuracy,
 
-          // PunchFailed included: a failure leaves no reading, and the preview
-          // must not go on showing a confirmation next to the error explaining
-          // that there is none.
-          isUnavailable:
-              state is PunchLocationUnavailable ||
-              state is PunchLocating ||
-              state is PunchPermissionDenied ||
-              state is PunchFailed,
+            // Movable, so somebody can look around and check they are where
+            // they think. Moving it never moves the mark — the pin is bound to
+            // the coordinate — and the control that appears puts the view back.
+            isInteractive: true,
+
+            // PunchFailed included: a failure leaves no reading, and the map must
+            // not go on showing a pin next to the error explaining there is none.
+            isUnavailable:
+                state is PunchLocationUnavailable ||
+                state is PunchLocating ||
+                state is PunchPermissionDenied ||
+                state is PunchFailed,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         _StateMessage(state: state),
-        const Spacer(),
+        const SizedBox(height: AppSpacing.md),
         const _ClockButton(),
       ],
     );
@@ -153,6 +245,16 @@ class _StateMessage extends StatelessWidget {
       PunchSubmitting() => (AppColors.textSecondary, 'Registrando...'),
       PunchFailed(:final message) => (AppColors.danger, message),
       PunchConfirmed() => (AppColors.success, 'Ponto registrado'),
+
+      // Deliberately not red. The mark exists, it keeps the time it was made
+      // at, and it goes up on its own — treating that as a failure would tell
+      // somebody to punch again and give them two marks.
+      PunchQueued(:final pendingCount) => (
+        AppColors.warning,
+        pendingCount == 1
+            ? 'Sem conexão. Ponto guardado e será enviado sozinho.'
+            : 'Sem conexão. $pendingCount pontos guardados para enviar.',
+      ),
     };
 
     return Semantics(

@@ -63,6 +63,11 @@ public static class EmployeeErrors
     /// excludes the worker from the regulatory export but must not block the
     /// hire or the punch.
     /// </summary>
+    public static Error ContractTypeUnknown(string value) => Error.Validation(
+        "EMPLOYEE_CONTRACT_TYPE_UNKNOWN",
+        $"'{value}' is not a contract type this build knows.",
+        "contractType");
+
     public static Error PisRequiredForAfd() => Error.Validation(
         "EMPLOYEE_PIS_REQUIRED_FOR_AFD",
         "Employee has no PIS and cannot be included in the AFD export.",
