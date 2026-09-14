@@ -10,7 +10,7 @@
     Versions are concrete on purpose: a floating "*" breaks reproducible builds.
   -->
   <ItemGroup Label="Runtime">
-    <PackageVersion Include="MailKit" Version="4.17.0" />
+    <PackageVersion Include="MailKit" Version="4.18.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
   </ItemGroup>
   <ItemGroup Label="Web">
