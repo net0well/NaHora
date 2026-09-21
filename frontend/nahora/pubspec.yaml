@@ -40,7 +40,7 @@ dependencies:
   dio: ^5.11.0
   # Versão exata, não `^`: atualizar a biblioteca deve ser uma decisão,
   # nunca efeito colateral de um `pub get` (ADR-006).
-  shadcn_ui: 0.56.2
+  shadcn_ui: 0.57.0
   geolocator: ^14.0.3
   # Mapa. Versão exata pelo mesmo motivo do shadcn_ui: o que ele desenha é
   # visível, e uma atualização deve ser decisão, não efeito de um `pub get`.
