@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------
 # Build
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 WORKDIR /src
 
 # Copy only what restore needs first, so a source-only change does not
