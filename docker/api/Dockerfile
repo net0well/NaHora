@@ -34,7 +34,7 @@ RUN dotnet publish backend/src/NaHora.Api/NaHora.Api.csproj \
 # failure that is slow and confusing to diagnose, in exchange for a smaller
 # image we do not need.
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends \
